@@ -316,10 +316,10 @@ Outcome: System can describe “becoming”
 
 ## Phase 4 — Multi-Agent / Multi-Mind Support
 
-- [ ] Cross-model transition merging  
-- [ ] Conflict resolution across agents  
-- [ ] Shared ambiguity fields  
-- [ ] Collective proto-intent synthesis  
+- [x] Cross-model transition merging  
+- [x] Conflict resolution across agents  
+- [x] Shared ambiguity fields  
+- [x] Collective proto-intent synthesis  
 
 Outcome: Distributed cognition support
 
@@ -327,10 +327,10 @@ Outcome: Distributed cognition support
 
 ## Phase 5 — Production Integration Layer
 
-- [ ] External API stabilization  
-- [ ] Hook-based integration system  
-- [ ] Event streaming architecture  
-- [ ] Observability + diagnostics layer  
+- [x] External API stabilization  
+- [x] Hook-based integration system  
+- [x] Event streaming architecture  
+- [x] Observability + diagnostics layer  
 
 Outcome: LAE usable as embedded subsystem in larger architectures
 
