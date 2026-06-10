@@ -1,0 +1,49 @@
+{
+  "type": "object",
+  "required": ["regions"],
+  "properties": {
+    "regions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "conflict_density", "coherence_score", "semantic_tags", "neighbors"],
+        "properties": {
+          "id": { "type": "string" },
+          "conflict_density": { "type": "number" },
+          "coherence_score": { "type": "number" },
+          "semantic_tags": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "neighbors": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "voids": {
+      "type": "array",
+      "description": "Region IDs with no valid model coverage",
+      "items": { "type": "string" }
+    },
+    "coherence_islands": {
+      "type": "array",
+      "description": "Region IDs with high local coherence",
+      "items": { "type": "string" }
+    },
+    "conflict_topology": {
+      "type": "object",
+      "description": "Adjacency map of conflict relationships between regions",
+      "additionalProperties": {
+        "type": "array",
+        "items": { "type": "string" }
+      }
+    },
+    "gradients": {
+      "type": "object",
+      "description": "Directional uncertainty pressure across the field",
+      "additionalProperties": { "type": "number" }
+    }
+  }
+}
