@@ -1,38 +1,41 @@
 # LAE Examples
 
-This directory contains runnable demonstrations and integration examples for the **Liminal Anchor Engine**.
+This directory contains runnable demonstrations and integration examples for the Liminal Anchor Engine.
 
 ## Quick Start
 
-### Basic Demo (Recommended)
+### 1. Basic Demo (Recommended first run)
 
-From the root of the repository, run:
+Run this command from the repo root:
 
 ```bash
 python examples/demo.py
 ```
 
-Linux / macOS users can also make it directly executable:
+Or on Linux/macOS (after making it executable):
 
 ```bash
 chmod +x examples/demo.py
 ./examples/demo.py
 ```
 
-The demo runs a series of synthetic transitions and prints the full LAE pipeline: TransitionEvent, AmbiguityField, Anchors, LiminalMemoryEpisode, ProtoIntent, and IdentityGradient.
+This walks through multiple synthetic transitions (confidence collapse, oscillation, frame conflict, rapid context switch) and shows the full pipeline output: ambiguity fields, anchors, memory episodes, proto-intents, and identity gradient evolution.
 
 ## What's Inside
 
-- **`demo.py`** — Complete end-to-end demonstration of the core LAE capabilities.
+- `demo.py` — Full end-to-end demonstration of LAE's core capabilities. Uses synthetic observations that trigger different transition types. Great for understanding what LAE actually does in practice.
 
-## Planned / Future Examples
+## Next Steps / Planned Examples
 
-- `rfe_integration.py` — Wiring LAE as a sidecar to RFE-Core2
-- `multi_mind_demo.py` — Phase 4 collective/multi-agent transitions
+- `rfe_integration.py` — Example of wiring LAE as a sidecar to RFE-Core2
+- `multi_mind_demo.py` — Phase 4 collective transition merging
 - `custom_hooks.py` — Using pre-transition vetoes and annotation hooks
+- `minimal_agent_loop.py` — Embedding LAE in a simple agent-style loop
+
+Feel free to open an issue or PR if you'd like any of these prioritized.
 
 ---
 
-**LAE** turns turbulent transitions into structured becoming.
+**LAE** turns the messy, fragile moments between states into structured becoming.
 
 The boundary is where the interesting things happen.
