@@ -1,0 +1,26 @@
+{
+  "type": "object",
+  "required": [
+    "vector",
+    "magnitude",
+    "stability_score",
+    "origin_episode_ids",
+    "ambiguity_lineage"
+  ],
+  "properties": {
+    "vector": {
+      "type": "object",
+      "additionalProperties": { "type": "number" }
+    },
+    "magnitude": { "type": "number" },
+    "stability_score": { "type": "number" },
+    "origin_episode_ids": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "ambiguity_lineage": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}
