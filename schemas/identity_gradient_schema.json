@@ -1,0 +1,43 @@
+{
+  "type": "object",
+  "required": [
+    "invariants",
+    "direction",
+    "rigidity",
+    "plasticity_zones",
+    "drift_vectors",
+    "trajectory_history"
+  ],
+  "properties": {
+    "invariants": {
+      "type": "array",
+      "description": "Features that must remain unchanged across all transitions",
+      "items": { "type": "string" }
+    },
+    "direction": {
+      "type": "object",
+      "description": "Current gradient orientation of identity evolution",
+      "additionalProperties": { "type": "number" }
+    },
+    "rigidity": {
+      "type": "object",
+      "description": "Resistance weighting per dimension",
+      "additionalProperties": { "type": "number" }
+    },
+    "plasticity_zones": {
+      "type": "array",
+      "description": "High-change regions of identity",
+      "items": { "type": "string" }
+    },
+    "drift_vectors": {
+      "type": "object",
+      "description": "Direction of identity evolution",
+      "additionalProperties": { "type": "number" }
+    },
+    "trajectory_history": {
+      "type": "array",
+      "description": "Append-only record of identity transitions",
+      "items": { "type": "object" }
+    }
+  }
+}
