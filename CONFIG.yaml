@@ -1,0 +1,52 @@
+lae:
+  version: 1.0
+
+  activation:
+    mode: event_triggered
+    triggers:
+      - confidence_collapse
+      - hypothesis_conflict
+      - frame_oscillation
+      - rapid_context_switch
+      - model_reconfiguration
+
+    confidence_threshold: 0.4
+    oscillation_window_ms: 1500
+
+  pipeline:
+    - TransitionDetector
+    - TransitionEvent
+    - AmbiguityField
+    - AnchorAllocator
+    - LiminalMemoryBuffer
+    - ProtoIntentSynthesizer
+    - IdentityGradientMapper
+    - EventRouter
+
+  ambiguity_field:
+    min_regions: 3
+    include_voids: true
+    include_coherence_islands: true
+    include_conflict_graph: true
+
+  anchors:
+    max_active_anchors: 12
+    priority_bias: identity_stability
+
+  memory:
+    store_type: episodic
+    compression: enabled
+    index_by: ambiguity_signature
+
+  intent:
+    type: proto_vector
+    allow_non_deterministic: true
+
+  identity:
+    representation: gradient_field
+    update_mode: incremental
+
+  safety:
+    prevent_identity_crystallization: true
+    prevent_anchor_overconstraint: true
+    preserve_transition_history: true
