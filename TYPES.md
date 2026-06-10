@@ -4,8 +4,8 @@
 
 ## TransitionEvent
 
-- sourcestateid: str
-- candidatetargetstates: list[str]
+- source_state_id: str
+- candidate_target_states: list[str]
 - confidence_profile: dict[str, float]
 - conflict_score: float
 - time_window: {start: float, end: float}
@@ -15,11 +15,15 @@
 ## AmbiguityField
 
 - regions: list[Region]
+- voids: list[str]
+- coherence_islands: list[str]
+- conflict_topology: dict[str, list[str]]
+- gradients: dict[str, float]
 
 Region:
 - id: str
-- conflictdensity: float
-- coherencescore: float
+- conflict_density: float
+- coherence_score: float
 - semantic_tags: list[str]
 - neighbors: list[str]
 
@@ -39,11 +43,11 @@ Region:
 ## LiminalMemoryEpisode
 
 - episode_id: str
-- sourcestateid: str
-- targetstateids: list[str]
+- source_state_id: str
+- target_state_ids: list[str]
 - anchors_used: list[str]
 - ambiguity_signature: dict
-- identityshiftdelta: dict
+- identity_shift_delta: dict
 
 ---
 
@@ -59,6 +63,7 @@ Region:
 
 ## IdentityGradient
 
+- invariants: list[str]
 - direction: dict[str, float]
 - rigidity: dict[str, float]
 - plasticity_zones: list[str]
