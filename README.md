@@ -294,10 +294,10 @@ Outcome: System can run synthetic transitions end-to-end
 
 ## Phase 2 — Structured Memory & Retrieval
 
-- [ ] Embedding-based transition indexing  
-- [ ] Ambiguity signature clustering  
-- [ ] Historical transition retrieval  
-- [ ] Pattern-based anchor suggestion  
+- [x] Embedding-based transition indexing  
+- [x] Ambiguity signature clustering  
+- [x] Historical transition retrieval  
+- [x] Pattern-based anchor suggestion  
 
 Outcome: System learns from transitions
 
@@ -305,10 +305,10 @@ Outcome: System learns from transitions
 
 ## Phase 3 — Identity Gradient System
 
-- [ ] IdentityGradientMapper implementation  
-- [ ] Track invariance vs plasticity  
-- [ ] Build evolution trajectory graphs  
-- [ ] Add identity drift forecasting  
+- [x] IdentityGradientMapper implementation  
+- [x] Track invariance vs plasticity  
+- [x] Build evolution trajectory graphs  
+- [x] Add identity drift forecasting  
 
 Outcome: System can describe “becoming”
 
