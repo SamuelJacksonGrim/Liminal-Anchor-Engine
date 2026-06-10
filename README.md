@@ -108,7 +108,7 @@ lae/
 │   ├── transition_schema.json
 │   ├── ambiguity_field_schema.json
 │   ├── anchor_schema.json
-│   ├── memory_episode_schema.json
+│   ├── liminal_memory_episode_schema.json
 │   ├── proto_intent_schema.json
 │   └── identity_gradient_schema.json
 │
