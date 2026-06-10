@@ -1,0 +1,34 @@
+{
+  "type": "object",
+  "required": [
+    "source_state_id",
+    "candidate_target_states",
+    "confidence_profile",
+    "conflict_score",
+    "time_window"
+  ],
+  "properties": {
+    "source_state_id": {
+      "type": "string"
+    },
+    "candidate_target_states": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "confidence_profile": {
+      "type": "object",
+      "additionalProperties": { "type": "number" }
+    },
+    "conflict_score": {
+      "type": "number"
+    },
+    "time_window": {
+      "type": "object",
+      "required": ["start", "end"],
+      "properties": {
+        "start": { "type": "number" },
+        "end": { "type": "number" }
+      }
+    }
+  }
+}
