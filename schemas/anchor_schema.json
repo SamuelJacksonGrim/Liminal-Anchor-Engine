@@ -1,0 +1,28 @@
+{
+  "type": "object",
+  "required": [
+    "anchor_id",
+    "protected_features",
+    "allowed_mutations",
+    "forbidden_mutations",
+    "priority",
+    "scope"
+  ],
+  "properties": {
+    "anchor_id": { "type": "string" },
+    "protected_features": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "allowed_mutations": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "forbidden_mutations": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "priority": { "type": "integer" },
+    "scope": { "type": "string" }
+  }
+}
