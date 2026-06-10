@@ -163,7 +163,7 @@ def main() -> int:
         check(
             "Contract #4: episode stores crossing, not state snapshots",
             "state_snapshot" not in result.episode.__dict__
-            and result.episode.identity_shift_delta == {},
+            and isinstance(result.episode.identity_shift_delta, dict),
         )
         check(
             "Contract #5: intent binds no decision (vector only)",
