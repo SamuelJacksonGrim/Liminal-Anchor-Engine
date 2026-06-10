@@ -1,0 +1,25 @@
+{
+  "type": "object",
+  "required": [
+    "episode_id",
+    "source_state_id",
+    "target_state_ids",
+    "anchors_used",
+    "ambiguity_signature",
+    "identity_shift_delta"
+  ],
+  "properties": {
+    "episode_id": { "type": "string" },
+    "source_state_id": { "type": "string" },
+    "target_state_ids": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "anchors_used": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "ambiguity_signature": { "type": "object" },
+    "identity_shift_delta": { "type": "object" }
+  }
+}
