@@ -1,108 +1,187 @@
-# Liminal Anchor Engine (LAE)
-## Internal Logic Contract
-
-This document defines the invariant rules that every subsystem must obey.
-
-If a module violates these, it is not part of LAE.
+# CONTRACTS.md
+## Liminal Anchor Engine (LAE)
 
 ---
 
-# 1. Transitions Are Primary
+# 0. Contract Rule
 
-All computation is transition-centric.
+All contracts in this system MUST match `schemas/` exactly.
 
-- Detectors identify *leaving states*, not states.
-- Memory stores *crossings*, not snapshots.
-- Identity tracks *drift*, not attributes.
-
-> States are temporary compressions of transition fields.
-
----
-
-# 2. Ambiguity Must Be Structured
-
-Ambiguity is a navigable space, not noise.
-
-Every AmbiguityField must contain:
-
-- regions (structured subspaces)
-- gradients (directional uncertainty)
-- voids (undefined model zones)
-- coherence islands (local stability clusters)
-- conflict topology (relationship graph of tensions)
-
-If ambiguity is not structured → it is invalid.
+- Schemas define structure
+- Contracts define interpretation constraints
+- No field may exist in Contracts that is not present in schemas
+- No renaming allowed
+- No extra semantic expansion allowed
 
 ---
 
-# 3. Anchors Are Constraints, Not States
+# 1. TransitionEvent Contract
 
-Anchors define continuity constraints during transformation.
+MUST MATCH: `transition_schema.json`
 
-Every Anchor must specify:
+Fields:
 
-- protected_features
-- allowed_mutations
-- forbidden_mutations
-- priority
-- temporal_scope
+- source_state_id: string
+- candidate_target_states: string[]
+- confidence_profile: map<string, float>
+- conflict_score: float
+- time_window: {start: float, end: float}
 
-> Anchors preserve identity continuity without freezing identity.
+Rules:
 
----
-
-# 4. Intent Begins as Drift
-
-ProtoIntent is not a decision.
-
-It is a directional field emerging from ambiguity.
-
-Every ProtoIntent must include:
-
-- vector (directional pressure field)
-- magnitude (strength of drift)
-- stability_score (temporal coherence)
-- origin_episode_ids (causal history)
-- ambiguity_lineage (source uncertainty structure)
-
-> Intent is pressure before choice.
+- Represents only detected transition boundaries
+- Does not include interpretation logic
+- Confidence values are scalar probabilities per hypothesis
 
 ---
 
-# 5. Identity Is a Gradient Field
+# 2. AmbiguityField Contract
 
-Identity is a dynamic manifold, not a fixed representation.
+MUST MATCH: `ambiguity_field_schema.json`
 
-Every IdentityGradient must track:
+Fields:
 
-- invariants (non-changing constraints)
-- plasticity_zones (adaptable structure)
-- rigidity_map (resistance to change)
-- drift_vectors (direction of evolution)
-- trajectory_history (temporal unfolding)
+- regions: Region[]
+- voids: string[]
+- coherence_islands: string[]
+- conflict_topology: map<string, string[]>
+- gradients: map<string, float>
 
-> Identity is motion across transition space.
+Region:
+
+- id: string
+- conflict_density: float
+- coherence_score: float
+- semantic_tags: string[]
+- neighbors: string[]
+
+Rules:
+
+- Regions are atomic partitions of uncertainty space
+- voids are region IDs with no valid model coverage
+- coherence_islands are region IDs with high local coherence
+- conflict_topology is an adjacency map of conflict relationships between regions
+- gradients represent directional uncertainty pressure across the field
+- Ambiguity is mapped, not collapsed
 
 ---
 
-# 6. Prime Directive
+# 3. Anchor Contract
 
-All modules must obey:
+MUST MATCH: `anchor_schema.json`
 
-> Preserve continuity without preventing transformation.
+Fields:
 
-This is the only global constraint.
+- anchor_id: string
+- protected_features: string[]
+- allowed_mutations: string[]
+- forbidden_mutations: string[]
+- priority: int
+- scope: string
+
+Rules:
+
+- Anchors are constraints only
+- Anchors do not encode state
+- Priority is relative ordering only (higher = stronger constraint)
 
 ---
 
-# 7. System Validity Condition
+# 4. LiminalMemoryEpisode Contract
 
-A system state is valid only if:
+MUST MATCH: `liminal_memory_episode_schema.json`
 
-- transitions are preserved as first-class objects
-- ambiguity remains structured
-- anchors preserve invariants without freezing dynamics
-- proto-intents remain non-decisional
-- identity remains gradient-based
+Fields:
 
-Violation of any condition = invalid LAE state.
+- episode_id: string
+- source_state_id: string
+- target_state_ids: string[]
+- anchors_used: string[]
+- ambiguity_signature: object
+- identity_shift_delta: object
+
+Rules:
+
+- Stores transition trace, not state snapshots
+- ambiguity_signature is opaque (schema-defined only)
+- identity_shift_delta is a diff object, not a full state
+
+---
+
+# 5. ProtoIntent Contract
+
+MUST MATCH: `proto_intent_schema.json`
+
+Fields:
+
+- vector: map<string, float>
+- magnitude: float
+- stability_score: float
+- origin_episode_ids: string[]
+- ambiguity_lineage: string[]
+
+Rules:
+
+- ProtoIntent is directional only (no decision binding)
+- magnitude is scalar intensity of vector field
+- stability_score reflects temporal coherence, not correctness
+
+---
+
+# 6. IdentityGradient Contract
+
+MUST MATCH: `identity_gradient_schema.json`
+
+Fields:
+
+- invariants: string[]
+- direction: map<string, float>
+- rigidity: map<string, float>
+- plasticity_zones: string[]
+- drift_vectors: map<string, float>
+- trajectory_history: object[]
+
+Rules:
+
+- Identity is a field, not a vector
+- invariants are features that must remain unchanged across all transitions
+- direction encodes the current gradient orientation of identity evolution
+- rigidity represents resistance weighting per dimension
+- plasticity_zones define high-change regions
+- trajectory_history is append-only
+
+---
+
+# 7. Global Enforcement Rules
+
+## 7.1 No Schema Drift
+If schema changes, contract MUST be updated immediately.
+
+## 7.2 No Semantic Expansion
+Contracts may NOT add meaning beyond schema fields.
+
+## 7.3 Computation Lives Elsewhere
+Any derived logic belongs in:
+- core/
+- intent/
+- identity/
+NOT in contracts.
+
+## 7.4 Contracts are Invariants Only
+They define:
+- structure
+- constraints
+- interpretation boundaries
+
+NOT:
+- algorithms
+- heuristics
+- behavior
+
+---
+
+# 8. System Guarantee
+
+If all contracts match schemas exactly:
+
+> LAE becomes structurally deterministic across all layers.
