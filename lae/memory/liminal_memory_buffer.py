@@ -1,29 +1,28 @@
 """
-lae.memory.liminal_memory_buffer — In-memory episodic buffer (Phase 1).
+lae.memory.liminal_memory_buffer — Episodic buffer facade (Phase 2 upgrade).
 
-Layer 4. Input: AmbiguityField + Anchor set (+ originating
-TransitionEvent). Output: LiminalMemoryEpisode, stored and indexed.
+Coordinates TransitionEpisodeStore, AmbiguitySignatureIndex,
+MemoryRetrieval, and CompressionStrategy behind a single interface.
+The pipeline only talks to this class — the submodules are implementation
+details.
 
-Contract #4: memory stores *crossings*, not snapshots. An episode
-encodes the shape of a transition — its ambiguity structure, the
-anchors applied, and the identity drift it produced — never the full
-states on either side.
-
-Phase 1 indexing: ambiguity_signature is a compact structural summary
-(region count, void count, island count, mean conflict density,
-dominant gradient direction). Episodes are indexed by a hashable key
-derived from that signature, enabling Phase 2 similarity retrieval to
-slot in without changing the storage layer.
+Phase 1 compatibility: compute_signature() and signature_key() are
+preserved as static methods so ProtoIntentSynthesizer keeps working
+without modification.
 """
 
 from __future__ import annotations
 
-import itertools
-from collections import defaultdict
 from typing import Any
 
 from ..config import LAEConfig
 from ..types import AmbiguityField, Anchor, LiminalMemoryEpisode, TransitionEvent
+from .ambiguity_signature_index import AmbiguitySignatureIndex
+from .compression_strategy import CompressionStrategy
+from .memory_retrieval import MemoryRetrieval
+from .transition_episode_store import TransitionEpisodeStore
+
+import itertools
 
 _episode_counter = itertools.count(1)
 
@@ -31,8 +30,10 @@ _episode_counter = itertools.count(1)
 class LiminalMemoryBuffer:
     def __init__(self, config: LAEConfig | None = None) -> None:
         self.config = config or LAEConfig()
-        self._episodes: list[LiminalMemoryEpisode] = []
-        self._index: dict[str, list[str]] = defaultdict(list)  # sig_key -> episode_ids
+        self._store = TransitionEpisodeStore()
+        self._index = AmbiguitySignatureIndex()
+        self._retrieval = MemoryRetrieval(self._store, self._index)
+        self._compression = CompressionStrategy(self._store, self._index, self.config)
 
     # ------------------------------------------------------------------
     def record(
@@ -51,14 +52,36 @@ class LiminalMemoryBuffer:
             ambiguity_signature=signature,
             identity_shift_delta=identity_shift_delta or {},
         )
-        self._episodes.append(episode)
-        self._index[self.signature_key(signature)].append(episode.episode_id)
+        self._store.store(episode)
+        self._index.insert(episode.episode_id, signature)
+
+        # Opportunistic compression.
+        if self._compression.should_compress():
+            self._compression.compress()
+
         return episode
+
+    # ------------------------------------------------------------------
+    def retrieve_similar(
+        self, field: AmbiguityField, k: int = 5
+    ) -> list[LiminalMemoryEpisode]:
+        """Top-k similarity retrieval (Phase 2: cosine similarity over
+        ambiguity signature vectors)."""
+        return self._retrieval.top_k_similar(field, k=k)
+
+    def suggest_anchors(
+        self,
+        field: AmbiguityField,
+        current_anchors: list[Anchor],
+        k: int = 5,
+    ) -> list[str]:
+        """Pattern-based anchor suggestions from similar past episodes."""
+        similar = self._retrieval.top_k_similar(field, k=k)
+        return self._retrieval.suggest_anchors(similar, current_anchors)
 
     # ------------------------------------------------------------------
     @staticmethod
     def compute_signature(field: AmbiguityField) -> dict[str, Any]:
-        """Compact structural summary of an ambiguity field."""
         densities = [r.conflict_density for r in field.regions] or [0.0]
         dominant = (
             max(field.gradients, key=field.gradients.get)
@@ -71,16 +94,13 @@ class LiminalMemoryBuffer:
             "island_count": len(field.coherence_islands),
             "conflict_edge_count": sum(
                 len(v) for v in field.conflict_topology.values()
-            )
-            // 2,
+            ) // 2,
             "mean_conflict_density": round(sum(densities) / len(densities), 4),
             "dominant_gradient": dominant,
         }
 
     @staticmethod
     def signature_key(signature: dict[str, Any]) -> str:
-        """Hashable bucket key. Coarse by design — Phase 2 replaces this
-        with embedding similarity."""
         return (
             f"r{signature['region_count']}"
             f"-v{signature['void_count']}"
@@ -89,14 +109,8 @@ class LiminalMemoryBuffer:
         )
 
     # ------------------------------------------------------------------
-    def retrieve_similar(self, field: AmbiguityField) -> list[LiminalMemoryEpisode]:
-        """Phase 1 retrieval: exact signature-bucket match."""
-        key = self.signature_key(self.compute_signature(field))
-        ids = set(self._index.get(key, []))
-        return [e for e in self._episodes if e.episode_id in ids]
-
     def all_episodes(self) -> list[LiminalMemoryEpisode]:
-        return list(self._episodes)
+        return self._store.all()
 
     def __len__(self) -> int:
-        return len(self._episodes)
+        return len(self._store)
