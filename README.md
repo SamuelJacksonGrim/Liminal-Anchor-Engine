@@ -275,18 +275,18 @@ It acts as a **sidecar cognition layer**, not a primary controller.
 - [x] Define subsystem boundaries  
 - [x] Establish repo map  
 - [x] Define core abstractions  
-- [ ] Finalize type contracts (TYPES.md)  
-- [ ] Formalize event schemas (schemas/)  
+- [x] Finalize type contracts (TYPES.md)  
+- [x] Formalize event schemas (schemas/)  
 
 ---
 
 ## Phase 1 — Minimal Functional Skeleton
 
-- [ ] Implement TransitionDetector (rule-based MVP)  
-- [ ] Basic AmbiguityField generator (graph model)  
-- [ ] Simple Anchor allocator (constraint tagging)  
-- [ ] In-memory LiminalMemoryBuffer  
-- [ ] Proto-intent heuristic generator  
+- [x] Implement TransitionDetector (rule-based MVP)  
+- [x] Basic AmbiguityField generator (graph model)  
+- [x] Simple Anchor allocator (constraint tagging)  
+- [x] In-memory LiminalMemoryBuffer  
+- [x] Proto-intent heuristic generator  
 
 Outcome: System can run synthetic transitions end-to-end
 
