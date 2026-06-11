@@ -24,15 +24,14 @@ This walks through multiple synthetic transitions (confidence collapse, oscillat
 ## What's Inside
 
 - `demo.py` — Full end-to-end demonstration of LAE's core capabilities. Uses synthetic observations that trigger different transition types. Great for understanding what LAE actually does in practice.
+- `minimal_agent_loop.py` — The smallest realistic embedding: an agent loop where LAE rides sidecar, stays dormant while the agent is decisive, and structures the crossings when scoring wobbles.
+- `rfe_integration.py` — Wiring LAE as a sidecar to an [RFE-Core2](https://github.com/SamuelJacksonGrim/RFE-Core2) loop: the `RFESidecar` adapter maps per-cycle rhythm-router telemetry to LAE observations, with a runnable mock of the RFE cycle and real-wiring instructions.
 - `multi_mind_demo.py` — Phase 4 collective transition merging: three agents with separate pipelines, a merged crossing when two or more destabilize together.
 - `custom_hooks.py` — Phase 5 host integration: pre-transition vetoes, result annotation hooks, host-injected reconfiguration signals, and the event stream.
 
-## Next Steps / Planned Examples
+All five run standalone from the repo root with no installation and are exercised by CI.
 
-- `rfe_integration.py` — Example of wiring LAE as a sidecar to RFE-Core2
-- `minimal_agent_loop.py` — Embedding LAE in a simple agent-style loop
-
-Feel free to open an issue or PR if you'd like any of these prioritized.
+Feel free to open an issue or PR if you'd like more integration targets covered.
 
 ---
 
