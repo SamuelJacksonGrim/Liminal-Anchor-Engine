@@ -39,92 +39,103 @@ LAE is responsible for:
 
 ---
 
+# 🚀 Getting Started
+
+```bash
+# Install (editable, with test tooling)
+pip install -e ".[dev]"
+
+# Run the full demo — synthetic transitions end-to-end
+python examples/demo.py
+
+# Run the test suite
+pytest
+```
+
+Minimal embedding:
+
+```python
+from lae import LAE
+
+engine = LAE()
+outcome = engine.observe({
+    "state_id": "stable_narrative_v3",
+    "hypotheses": {"frame_A": 0.31, "frame_B": 0.29, "frame_C": 0.28},
+})
+
+if outcome.activated:
+    result = outcome.result
+    print(result.intent.vector)        # directional pressure, not a decision
+    print(result.identity.invariants)  # what held through the crossing
+```
+
+Multi-mind (Phase 4):
+
+```python
+engine = LAE(agents=["alpha", "beta"])
+collective = engine.observe_collective({"alpha": obs_a, "beta": obs_b})
+```
+
+LAE has **zero hard dependencies** — the standard library is enough. `pyyaml` is optional (CONFIG.yaml loading), `pytest` is dev-only.
+
+---
+
 # 🧠 System Architecture
 
 ## 📦 Repository Map
 
 ```
-lae/
+Liminal-Anchor-Engine/
 │
-├── README.md
-├── ARCHITECTURE.md
-├── TYPES.md
-├── CONFIG.yaml
+├── README.md / ARCHITECTURE.md / CONTRACTS.md / TYPES.md / CLAUDE.md
+├── pyproject.toml
 │
-├── core/
-│   ├── lae_orchestrator.py
-│   ├── transition_pipeline.py
-│   ├── event_router.py
-│   └── execution_context.py
+├── lae/
+│   ├── __init__.py                # public API: LAE, LiminalAnchorEngine, core types
+│   ├── CONFIG.yaml                # default runtime configuration
+│   ├── config.py                  # typed config + YAML loader (optional dep)
+│   ├── types.py                   # the six canonical dataclasses (mirrors schemas/)
+│   ├── pipeline.py                # LiminalAnchorEngine — the 6-layer pipeline
+│   │
+│   ├── detectors/
+│   │   └── transition_detector.py # confidence collapse / conflict / oscillation rules
+│   ├── fields/
+│   │   └── ambiguity_field.py     # graph-model AmbiguityField generator
+│   ├── anchors/
+│   │   └── anchor_allocator.py    # continuity / stability / non-collapse / exploration
+│   ├── memory/
+│   │   ├── liminal_memory_buffer.py      # facade the pipeline talks to
+│   │   ├── transition_episode_store.py
+│   │   ├── ambiguity_signature_index.py  # cosine-similarity retrieval
+│   │   ├── memory_retrieval.py
+│   │   └── compression_strategy.py
+│   ├── intent/
+│   │   └── proto_intent_synthesizer.py
+│   ├── identity/
+│   │   ├── identity_gradient_mapper.py
+│   │   ├── identity_field_model.py       # live gradient + crystallization guard
+│   │   ├── invariance_tracker.py
+│   │   ├── plasticity_analyzer.py
+│   │   └── evolution_dynamics.py
+│   ├── multimind/                 # Phase 4
+│   │   ├── coordinator.py
+│   │   ├── transition_merger.py
+│   │   ├── shared_ambiguity_field.py
+│   │   └── collective_intent.py
+│   ├── routing/
+│   │   └── event_router.py        # pub/sub event streaming
+│   └── integration/               # Phase 5
+│       ├── external_api.py        # LAE — the stable embedding surface
+│       ├── system_hooks.py        # pre-transition veto / annotation hooks
+│       └── diagnostics.py
 │
-├── detectors/
-│   ├── transition_detector.py
-│   ├── oscillation_detector.py
-│   ├── conflict_detector.py
-│   └── confidence_drop_detector.py
-│
-├── fields/
-│   ├── ambiguity_field_generator.py
-│   ├── ambiguity_field_model.py
-│   ├── conflict_regions.py
-│   ├── void_mapper.py
-│   └── agreement_zones.py
-│
-├── anchors/
-│   ├── liminal_anchor_allocator.py
-│   ├── anchor_model.py
-│   ├── anchor_priority_solver.py
-│   ├── protected_feature_registry.py
-│   └── mutation_policy_engine.py
-│
-├── memory/
-│   ├── liminal_memory_buffer.py
-│   ├── transition_episode_store.py
-│   ├── ambiguity_signature_index.py
-│   ├── memory_retrieval.py
-│   └── compression_strategy.py
-│
-├── intent/
-│   ├── proto_intent_synthesizer.py
-│   ├── intent_gradient_builder.py
-│   ├── directional_field_generator.py
-│   └── intent_stability_filter.py
-│
-├── identity/
-│   ├── identity_gradient_mapper.py
-│   ├── identity_field_model.py
-│   ├── invariance_tracker.py
-│   ├── plasticity_analyzer.py
-│   └── evolution_dynamics.py
-│
-├── events/
-│   ├── transition_event.py
-│   ├── ambiguity_event.py
-│   ├── anchor_event.py
-│   ├── proto_intent_event.py
-│   └── identity_update_event.py
-│
-├── schemas/
-│   ├── transition_schema.json
-│   ├── ambiguity_field_schema.json
-│   ├── anchor_schema.json
-│   ├── liminal_memory_episode_schema.json
-│   ├── proto_intent_schema.json
-│   └── identity_gradient_schema.json
-│
-├── utils/
-│   ├── similarity.py
-│   ├── clustering.py
-│   ├── graph_utils.py
-│   ├── statistical_signals.py
-│   └── time_windowing.py
-│
-└── integration/
-    ├── system_hooks.py
-    ├── pre_decision_hook.py
-    ├── reconfiguration_hook.py
-    ├── multi_mind_synthesis_hook.py
-    └── external_api.py
+├── schemas/                       # JSON Schemas — source of truth (Contract #0)
+├── examples/
+│   └── demo.py
+└── tests/
+    ├── unit/                      # pytest unit tests per layer
+    ├── smoke/                     # Phase 1 end-to-end narrative suite
+    └── integration/               # Phase 2–5 narrative suites
 ```
 
 ---
@@ -270,7 +281,9 @@ It acts as a **sidecar cognition layer**, not a primary controller.
 
 # 🗺️ Roadmap
 
-## Phase 0 — Structural Definition (current)
+All five phases have a working implementation. Current focus: hardening, examples, and real-host integrations.
+
+## Phase 0 — Structural Definition ✅
 
 - [x] Define subsystem boundaries  
 - [x] Establish repo map  
@@ -280,7 +293,7 @@ It acts as a **sidecar cognition layer**, not a primary controller.
 
 ---
 
-## Phase 1 — Minimal Functional Skeleton
+## Phase 1 — Minimal Functional Skeleton ✅
 
 - [x] Implement TransitionDetector (rule-based MVP)  
 - [x] Basic AmbiguityField generator (graph model)  
@@ -292,7 +305,7 @@ Outcome: System can run synthetic transitions end-to-end
 
 ---
 
-## Phase 2 — Structured Memory & Retrieval
+## Phase 2 — Structured Memory & Retrieval ✅
 
 - [x] Embedding-based transition indexing  
 - [x] Ambiguity signature clustering  
@@ -303,7 +316,7 @@ Outcome: System learns from transitions
 
 ---
 
-## Phase 3 — Identity Gradient System
+## Phase 3 — Identity Gradient System ✅
 
 - [x] IdentityGradientMapper implementation  
 - [x] Track invariance vs plasticity  
@@ -314,7 +327,7 @@ Outcome: System can describe “becoming”
 
 ---
 
-## Phase 4 — Multi-Agent / Multi-Mind Support
+## Phase 4 — Multi-Agent / Multi-Mind Support ✅
 
 - [x] Cross-model transition merging  
 - [x] Conflict resolution across agents  
@@ -325,7 +338,7 @@ Outcome: Distributed cognition support
 
 ---
 
-## Phase 5 — Production Integration Layer
+## Phase 5 — Production Integration Layer ✅
 
 - [x] External API stabilization  
 - [x] Hook-based integration system  
@@ -349,4 +362,3 @@ It does not ask:
 It asks:
 
 “What happens to what you are while you are becoming something else?”
-```

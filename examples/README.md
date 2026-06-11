@@ -24,12 +24,12 @@ This walks through multiple synthetic transitions (confidence collapse, oscillat
 ## What's Inside
 
 - `demo.py` — Full end-to-end demonstration of LAE's core capabilities. Uses synthetic observations that trigger different transition types. Great for understanding what LAE actually does in practice.
+- `multi_mind_demo.py` — Phase 4 collective transition merging: three agents with separate pipelines, a merged crossing when two or more destabilize together.
+- `custom_hooks.py` — Phase 5 host integration: pre-transition vetoes, result annotation hooks, host-injected reconfiguration signals, and the event stream.
 
 ## Next Steps / Planned Examples
 
 - `rfe_integration.py` — Example of wiring LAE as a sidecar to RFE-Core2
-- `multi_mind_demo.py` — Phase 4 collective transition merging
-- `custom_hooks.py` — Using pre-transition vetoes and annotation hooks
 - `minimal_agent_loop.py` — Embedding LAE in a simple agent-style loop
 
 Feel free to open an issue or PR if you'd like any of these prioritized.

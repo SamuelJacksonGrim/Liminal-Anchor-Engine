@@ -15,10 +15,10 @@ It exercises:
 - Identity gradient updates
 
 Run from the repo root:
-    python demo.py
+    python examples/demo.py
 
-Or with the package installed:
-    python -m lae_demo.demo
+Or with the package installed (pip install -e .):
+    python examples/demo.py   # from anywhere
 
 Zero extra dependencies beyond what's in LAE itself.
 """
@@ -26,9 +26,14 @@ Zero extra dependencies beyond what's in LAE itself.
 from __future__ import annotations
 
 import json
+import sys
 import time
 from dataclasses import asdict
+from pathlib import Path
 from typing import Any
+
+# Allow running straight from a repo checkout without pip install.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lae.pipeline import LiminalAnchorEngine, LiminalResult
 from lae.types import TransitionEvent, AmbiguityField, Anchor, LiminalMemoryEpisode, ProtoIntent, IdentityGradient
@@ -46,7 +51,7 @@ def pretty_print_result(result: LiminalResult, step: int) -> None:
     print(f"   Source State     : {event.source_state_id}")
     print(f"   Candidate Targets: {event.candidate_target_states}")
     print(f"   Conflict Score   : {event.conflict_score:.3f}")
-    print(f"   Time Window      : {event.time_window.duration():.1f}ms")
+    print(f"   Time Window      : {event.time_window.duration():.2f}s")
 
     # Field
     field = result.field
@@ -94,75 +99,64 @@ def pretty_print_result(result: LiminalResult, step: int) -> None:
             print(f"   • {s}")
 
 
-def create_synthetic_observation(trigger_type: str, step: int) -> dict[str, Any]:
+def create_synthetic_observations(trigger_type: str, step: int) -> list[dict[str, Any]]:
     """
-    Create realistic synthetic observations that trigger different LAE conditions.
-    These mimic what a host cognitive system might emit.
+    Create realistic synthetic observations that trigger different LAE
+    conditions. Each observation follows the TransitionDetector contract:
+
+        {"state_id": str, "hypotheses": {target_id: confidence}, "timestamp": float}
+
+    Returns a list because some triggers (oscillation) only fire over a
+    burst of observations, not a single one.
     """
-    base = {
-        "timestamp": time.time(),
-        "step": step,
-        "context_id": f"ctx_{step:03d}",
-    }
+    now = time.time()
 
     if trigger_type == "confidence_collapse":
         # Classic confidence collapse — no clear winner
-        return {
-            **base,
-            "hypotheses": ["frame_A", "frame_B", "frame_C"],
-            "confidences": {"frame_A": 0.31, "frame_B": 0.29, "frame_C": 0.28},
-            "conflict_score": 0.82,
-            "oscillation_count": 0,
-            "trigger": "confidence_collapse",
-            "source_state": "stable_narrative_v3",
-        }
+        return [{
+            "state_id": "stable_narrative_v3",
+            "hypotheses": {"frame_A": 0.31, "frame_B": 0.29, "frame_C": 0.28},
+            "timestamp": now,
+        }]
 
     elif trigger_type == "oscillation":
-        # Rapid flip-flopping between two attractors
-        return {
-            **base,
-            "hypotheses": ["explore", "exploit"],
-            "confidences": {"explore": 0.51, "exploit": 0.49},
-            "conflict_score": 0.71,
-            "oscillation_count": 4,
-            "oscillation_window_ms": 1200,
-            "trigger": "frame_oscillation",
-            "source_state": "decision_paralysis_loop",
-        }
+        # Rapid flip-flopping between two attractors inside the
+        # oscillation window — the top hypothesis swaps each observation.
+        return [
+            {
+                "state_id": "decision_paralysis_loop",
+                "hypotheses": {"explore": 0.51, "exploit": 0.49}
+                if i % 2 == 0
+                else {"explore": 0.49, "exploit": 0.51},
+                "timestamp": now + i * 0.1,
+            }
+            for i in range(4)
+        ]
 
     elif trigger_type == "frame_conflict":
         # Two strong but incompatible frames
-        return {
-            **base,
-            "hypotheses": ["ethical_priority", "efficiency_priority"],
-            "confidences": {"ethical_priority": 0.67, "efficiency_priority": 0.64},
-            "conflict_score": 0.89,
-            "semantic_distance": 0.78,
-            "trigger": "hypothesis_conflict",
-            "source_state": "value_tension_state",
-        }
+        return [{
+            "state_id": "value_tension_state",
+            "hypotheses": {"ethical_priority": 0.67, "efficiency_priority": 0.64},
+            "timestamp": now,
+        }]
 
     elif trigger_type == "rapid_switch":
-        # Sudden context/model change
-        return {
-            **base,
-            "hypotheses": ["previous_context", "new_context"],
-            "confidences": {"previous_context": 0.22, "new_context": 0.91},
-            "conflict_score": 0.55,
-            "context_switch_velocity": "high",
-            "trigger": "rapid_context_switch",
-            "source_state": "model_reconfiguration_pending",
-        }
+        # Confident context switch — deliberately does NOT trigger LAE.
+        # The new context wins decisively, so there is no liminal state
+        # to structure. The engine staying dormant here is correct.
+        return [{
+            "state_id": "model_reconfiguration_pending",
+            "hypotheses": {"previous_context": 0.22, "new_context": 0.91},
+            "timestamp": now,
+        }]
 
     else:  # default / mixed
-        return {
-            **base,
-            "hypotheses": ["maintain", "adapt", "reset"],
-            "confidences": {"maintain": 0.38, "adapt": 0.41, "reset": 0.21},
-            "conflict_score": 0.65,
-            "trigger": "mixed_instability",
-            "source_state": "ongoing_becoming",
-        }
+        return [{
+            "state_id": "ongoing_becoming",
+            "hypotheses": {"maintain": 0.38, "adapt": 0.41, "reset": 0.21},
+            "timestamp": now,
+        }]
 
 
 def main() -> None:
@@ -183,14 +177,16 @@ def main() -> None:
     ]
 
     for i, trigger in enumerate(triggers, 1):
-        obs = create_synthetic_observation(trigger, i)
-        print(f"\n>>> Feeding observation #{i} — trigger: {trigger}")
-        print(f"    Source state hint: {obs.get('source_state', 'unknown')}")
+        observations = create_synthetic_observations(trigger, i)
+        print(f"\n>>> Feeding observation burst #{i} — trigger: {trigger}")
+        print(f"    Source state: {observations[0]['state_id']}")
 
-        result = engine.process(obs)
+        result = None
+        for obs in observations:
+            result = engine.process(obs)
 
         if result is None:
-            print("   → No transition detected. System remains stable.")
+            print("    → No transition detected. System remains stable.")
             continue
 
         pretty_print_result(result, i)
