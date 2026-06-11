@@ -13,7 +13,14 @@ Canonical types (TYPES.md / schemas/) are importable from the top level.
 
 from .config import LAEConfig, load_config
 from .integration.external_api import LAE, ObservationOutcome
-from .persistence import StateFileError, load_state, restore_into, save_state
+from .persistence import (
+    StateFileError,
+    load_state,
+    restore_collective_into,
+    restore_into,
+    save_collective_state,
+    save_state,
+)
 from .pipeline import LiminalAnchorEngine, LiminalResult
 from .types import (
     AmbiguityField,
@@ -26,7 +33,7 @@ from .types import (
     TransitionEvent,
 )
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 
 __all__ = [
     "LAE",
@@ -36,8 +43,10 @@ __all__ = [
     "LAEConfig",
     "load_config",
     "save_state",
+    "save_collective_state",
     "load_state",
     "restore_into",
+    "restore_collective_into",
     "StateFileError",
     "TransitionEvent",
     "TimeWindow",

@@ -26,6 +26,10 @@ Persistence (a presence across restarts):
     # become; autosaves after each activation, so process death
     # never costs a memory
 
+    lae = LAE(agents=["alpha", "beta"], persist_path="collective.json")
+    # multi-mind: the whole roster persists to one file keyed by
+    # agent ID — each mind keeps its own memory and identity
+
 Wiring:
 - observe() runs pre_transition hooks (veto-capable), the pipeline,
   pre_resolution hooks (annotation-only), and emits the full event
@@ -42,7 +46,12 @@ from typing import Any
 
 from ..config import LAEConfig, load_config
 from ..multimind.coordinator import CollectiveResult, MultiMindCoordinator
-from ..persistence import restore_into, save_state
+from ..persistence import (
+    restore_collective_into,
+    restore_into,
+    save_collective_state,
+    save_state,
+)
 from ..pipeline import LiminalAnchorEngine, LiminalResult
 from ..routing.event_router import EventRouter
 from .diagnostics import Diagnostics
@@ -78,12 +87,6 @@ class LAE:
         self.events = EventRouter()
         self.hooks = HookRegistry()
 
-        if agents and persist_path:
-            raise ValueError(
-                "persist_path is single-agent only for now; persist each "
-                "agent's engine separately in multi-mind mode"
-            )
-
         if agents:
             self.coordinator: MultiMindCoordinator | None = MultiMindCoordinator(
                 agents, self.config, trust_weights
@@ -101,7 +104,12 @@ class LAE:
         self.autosave = autosave
         self.restored = False
         if self.persist_path is not None:
-            self.restored = restore_into(self._engine, self.persist_path)
+            if self.coordinator is not None:
+                self.restored = restore_collective_into(
+                    self.coordinator.engines, self.persist_path
+                )
+            else:
+                self.restored = restore_into(self._engine, self.persist_path)
 
     # ------------------------------------------------------------------
     def observe(self, observation: dict[str, Any]) -> ObservationOutcome:
@@ -147,6 +155,9 @@ class LAE:
         if result is None:
             return None
 
+        if self.autosave and self.persist_path is not None:
+            self.save()
+
         for agent_id, agent_result in result.agent_results.items():
             self._emit_activation_events(agent_result, agent=agent_id)
 
@@ -173,11 +184,14 @@ class LAE:
 
         Uses persist_path when no path is given. With persist_path set
         and autosave on (the default), this also happens automatically
-        after every activation.
+        after every activation. In multi-mind mode the whole roster is
+        saved to one file, keyed by agent ID.
         """
         target = Path(path) if path else self.persist_path
         if target is None:
             raise ValueError("no path given and no persist_path configured")
+        if self.coordinator is not None:
+            return save_collective_state(self.coordinator.engines, target)
         return save_state(self._engine, target)
 
     def diagnostics_for(self, agent_id: str) -> Diagnostics:
