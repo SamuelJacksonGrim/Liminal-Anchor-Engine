@@ -61,7 +61,12 @@ Liminal-Anchor-Engine/
 │   └── integration/               # Phase 5: external_api.py (class LAE), system_hooks.py, diagnostics.py
 │
 ├── schemas/                       # JSON Schemas — structural source of truth (Contract #0)
-├── examples/demo.py               # runnable end-to-end demo (also exercised by CI)
+├── examples/                      # five standalone demos, all exercised by CI
+│   ├── demo.py                    # end-to-end pipeline walkthrough
+│   ├── minimal_agent_loop.py      # smallest realistic embedding pattern
+│   ├── rfe_integration.py         # RFESidecar adapter for RFE-Core2 hosts
+│   ├── multi_mind_demo.py         # Phase 4 collective crossing
+│   └── custom_hooks.py            # Phase 5 vetoes / annotations / events
 └── tests/
     ├── conftest.py                # make_event / make_field fixtures
     ├── unit/                      # pytest unit tests per layer
