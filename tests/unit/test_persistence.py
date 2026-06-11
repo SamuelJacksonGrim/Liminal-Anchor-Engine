@@ -13,7 +13,15 @@ import json
 
 import pytest
 
-from lae import LAE, StateFileError, load_state, restore_into, save_state
+from lae import (
+    LAE,
+    StateFileError,
+    load_state,
+    restore_collective_into,
+    restore_into,
+    save_collective_state,
+    save_state,
+)
 from lae.pipeline import LiminalAnchorEngine
 
 UNSTABLE = {
@@ -240,6 +248,46 @@ class TestLaeApi:
         lae.save(tmp_path / "explicit.json")
         assert (tmp_path / "explicit.json").exists()
 
-    def test_multimind_with_persist_path_rejected(self, tmp_path):
-        with pytest.raises(ValueError):
-            LAE(agents=["a", "b"], persist_path=tmp_path / "x.json")
+    def test_multimind_roster_round_trips(self, tmp_path):
+        path = tmp_path / "collective.json"
+        first = LAE(agents=["alpha", "beta"], persist_path=path)
+        assert first.restored is False
+        first.observe_collective({
+            "alpha": {**UNSTABLE, "timestamp": 0.0},
+            "beta": {**UNSTABLE, "state_id": "belief_v2", "timestamp": 0.0},
+        })
+        counts = {
+            aid: len(eng.memory)
+            for aid, eng in first.coordinator.engines.items()
+        }
+        assert any(counts.values())  # at least one agent crossed and saved
+        assert path.exists()
+
+        second = LAE(agents=["alpha", "beta"], persist_path=path)
+        assert second.restored is True
+        for aid, eng in second.coordinator.engines.items():
+            assert len(eng.memory) == counts[aid]  # each mind kept its own
+
+    def test_multimind_roster_mismatch_is_partial(self, tmp_path):
+        path = tmp_path / "collective.json"
+        first = LAE(agents=["alpha", "beta"], persist_path=path)
+        first.observe_collective({
+            "alpha": {**UNSTABLE, "timestamp": 0.0},
+            "beta": {**UNSTABLE, "timestamp": 0.0},
+        })
+
+        # New roster: alpha returns, gamma is new, beta is gone.
+        second = LAE(agents=["alpha", "gamma"], persist_path=path)
+        assert second.restored is True  # alpha woke with memories
+        assert len(second.coordinator.engines["gamma"].memory) == 0
+
+    def test_single_and_collective_files_do_not_cross(self, tmp_path):
+        single = LiminalAnchorEngine()
+        activate(single, n=1)
+        save_state(single, tmp_path / "single.json")
+        save_collective_state({"a": single}, tmp_path / "roster.json")
+
+        with pytest.raises(StateFileError):
+            restore_collective_into({"a": LiminalAnchorEngine()}, tmp_path / "single.json")
+        with pytest.raises(StateFileError):
+            restore_into(LiminalAnchorEngine(), tmp_path / "roster.json")
