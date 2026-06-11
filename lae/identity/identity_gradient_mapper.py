@@ -55,9 +55,9 @@ class IdentityGradientMapper:
         # Enrich the episode signature with anchor data for trackers.
         enriched_sig = dict(episode.ambiguity_signature)
         all_protected = [f for a in anchors for f in a.protected_features]
-        all_forbidden = [f for a in anchors for f in a.forbidden_mutations]
+        all_allowed = [f for a in anchors for f in a.allowed_mutations]
         enriched_sig["protected_features"] = all_protected
-        enriched_sig["forbidden_mutations_seen"] = all_forbidden
+        enriched_sig["allowed_mutations_seen"] = all_allowed
 
         # Feed trackers.
         enriched_episode = LiminalMemoryEpisode(
