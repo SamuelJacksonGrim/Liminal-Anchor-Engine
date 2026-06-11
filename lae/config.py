@@ -9,6 +9,7 @@ Codespaces-friendly).
 
 from __future__ import annotations
 
+import copy
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -62,7 +63,9 @@ DEFAULTS: dict[str, Any] = {
 class LAEConfig:
     """Typed access to LAE configuration with CONFIG.yaml defaults."""
 
-    raw: dict[str, Any] = field(default_factory=lambda: dict(DEFAULTS))
+    # deepcopy: DEFAULTS holds nested dicts — a shallow copy would let one
+    # engine's config mutations leak into every other instance.
+    raw: dict[str, Any] = field(default_factory=lambda: copy.deepcopy(DEFAULTS))
 
     # -- activation --
     @property
@@ -130,7 +133,7 @@ def load_config(path: str | Path | None = None) -> LAEConfig:
 
         with open(path, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f) or {}
-        merged = dict(DEFAULTS)
+        merged = copy.deepcopy(DEFAULTS)
         merged.update(data.get("lae", data))
         return LAEConfig(raw=merged)
     except Exception:
