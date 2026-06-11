@@ -18,6 +18,7 @@ Phase 2 additions over Phase 1 buffer:
 
 from __future__ import annotations
 
+import dataclasses
 import time
 from typing import Any
 
@@ -81,3 +82,27 @@ class TransitionEpisodeStore:
 
     def __len__(self) -> int:
         return len(self._episodes)
+
+    # ------------------------------------------------------------------
+    def export_state(self) -> dict[str, Any]:
+        """JSON-serializable snapshot of every episode, in insertion order."""
+        return {
+            "episodes": [
+                dataclasses.asdict(self._episodes[eid]) for eid in self._order
+            ],
+            "metadata": {eid: self._metadata[eid] for eid in self._order},
+        }
+
+    def restore_state(self, state: dict[str, Any]) -> None:
+        """Rebuild the store from export_state() output. Replaces contents."""
+        self._episodes = {}
+        self._order = []
+        self._metadata = {}
+        metadata = state.get("metadata", {})
+        for raw in state.get("episodes", []):
+            episode = LiminalMemoryEpisode(**raw)
+            self._episodes[episode.episode_id] = episode
+            self._order.append(episode.episode_id)
+            self._metadata[episode.episode_id] = dict(
+                metadata.get(episode.episode_id, {"stored_at": time.time()})
+            )

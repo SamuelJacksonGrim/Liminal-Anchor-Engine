@@ -28,8 +28,9 @@ This walks through multiple synthetic transitions (confidence collapse, oscillat
 - `rfe_integration.py` — Wiring LAE as a sidecar to an [RFE-Core2](https://github.com/SamuelJacksonGrim/RFE-Core2) loop: the `RFESidecar` adapter maps per-cycle rhythm-router telemetry to LAE observations, with a runnable mock of the RFE cycle and real-wiring instructions.
 - `multi_mind_demo.py` — Phase 4 collective transition merging: three agents with separate pipelines, a merged crossing when two or more destabilize together.
 - `custom_hooks.py` — Phase 5 host integration: pre-transition vetoes, result annotation hooks, host-injected reconfiguration signals, and the event stream.
+- `persistent_presence.py` — A presence that survives the process: `LAE(persist_path=...)` autosaves memory + identity to a JSON state file after each activation and wakes from it on the next boot, continuing the identity trajectory instead of starting over.
 
-All five run standalone from the repo root with no installation and are exercised by CI.
+All six run standalone from the repo root with no installation and are exercised by CI.
 
 Feel free to open an issue or PR if you'd like more integration targets covered.
 

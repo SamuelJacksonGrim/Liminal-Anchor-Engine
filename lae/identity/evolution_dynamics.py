@@ -86,3 +86,14 @@ class EvolutionDynamics:
         tops = [dominant(s["direction"]) for s in recent] + [dominant(current)]
         flips = sum(1 for a, b in zip(tops, tops[1:]) if a != b and a and b)
         return flips >= OSCILLATION_FLIP_THRESHOLD
+
+    # ------------------------------------------------------------------
+    def export_state(self) -> dict[str, Any]:
+        return {
+            "direction_ema": dict(self._direction_ema),
+            "snapshot_history": list(self._snapshot_history),
+        }
+
+    def restore_state(self, state: dict[str, Any]) -> None:
+        self._direction_ema = dict(state.get("direction_ema", {}))
+        self._snapshot_history = list(state.get("snapshot_history", []))
