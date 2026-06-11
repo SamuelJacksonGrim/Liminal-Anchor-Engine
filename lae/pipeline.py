@@ -17,6 +17,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from .anchors import anchor_allocator as _anchor_module
 from .anchors.anchor_allocator import AnchorAllocator
 from .config import LAEConfig, load_config
 from .detectors.transition_detector import TransitionDetector
@@ -109,3 +110,33 @@ class LiminalAnchorEngine:
             identity=identity_snapshot,
             anchor_suggestions=anchor_suggestions,
         )
+
+    # ------------------------------------------------------------------
+    # Persistence (Contract: preserve_transition_history). Only durable
+    # state crosses the boundary — memory episodes and the identity
+    # gradient. Detector observation history is deliberately excluded:
+    # its oscillation window is milliseconds wide and meaningless after
+    # a restart.
+    def export_state(self) -> dict[str, Any]:
+        """JSON-serializable snapshot of all durable engine state."""
+        return {
+            "memory": self.memory.export_state(),
+            "identity": self.identity_mapper.export_state(),
+            "anchor_counter": _anchor_module._anchor_counter.peek(),
+        }
+
+    def restore_state(self, state: dict[str, Any]) -> None:
+        """Restore durable state from export_state() output."""
+        if "memory" in state:
+            self.memory.restore_state(state["memory"])
+        if "identity" in state:
+            self.identity_mapper.restore_state(state["identity"])
+        # Resume anchor IDs past both the saved counter and any anchor
+        # ID referenced by a restored episode.
+        max_seen = int(state.get("anchor_counter", 1))
+        for episode in self.memory.all_episodes():
+            for anchor_id in episode.anchors_used:
+                suffix = anchor_id.rsplit("::", 1)[-1]
+                if suffix.isdigit():
+                    max_seen = max(max_seen, int(suffix) + 1)
+        _anchor_module._anchor_counter.ensure_at_least(max_seen)

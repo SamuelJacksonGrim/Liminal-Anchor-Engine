@@ -110,3 +110,25 @@ class IdentityGradientMapper:
         self.field_model.apply_delta(delta)
 
         return delta, self.field_model.current
+
+    # ------------------------------------------------------------------
+    def export_state(self) -> dict[str, Any]:
+        """JSON-serializable snapshot of the full identity layer."""
+        return {
+            "step": self._step,
+            "field_model": self.field_model.export_state(),
+            "invariance_tracker": self.invariance_tracker.export_state(),
+            "plasticity_analyzer": self.plasticity_analyzer.export_state(),
+            "evolution_dynamics": self.evolution_dynamics.export_state(),
+        }
+
+    def restore_state(self, state: dict[str, Any]) -> None:
+        self._step = int(state.get("step", 0))
+        if "field_model" in state:
+            self.field_model.restore_state(state["field_model"])
+        if "invariance_tracker" in state:
+            self.invariance_tracker.restore_state(state["invariance_tracker"])
+        if "plasticity_analyzer" in state:
+            self.plasticity_analyzer.restore_state(state["plasticity_analyzer"])
+        if "evolution_dynamics" in state:
+            self.evolution_dynamics.restore_state(state["evolution_dynamics"])

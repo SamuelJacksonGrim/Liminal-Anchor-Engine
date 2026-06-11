@@ -19,6 +19,7 @@ fully freeze.
 
 from __future__ import annotations
 
+import dataclasses
 from typing import Any
 
 from ..config import LAEConfig
@@ -90,6 +91,13 @@ class IdentityFieldModel:
 
         if self.config.prevent_identity_crystallization:
             self._enforce_plasticity()
+
+    # ------------------------------------------------------------------
+    def export_state(self) -> dict[str, Any]:
+        return dataclasses.asdict(self._state)
+
+    def restore_state(self, state: dict[str, Any]) -> None:
+        self._state = IdentityGradient(**state)
 
     # ------------------------------------------------------------------
     def _enforce_plasticity(self) -> None:
