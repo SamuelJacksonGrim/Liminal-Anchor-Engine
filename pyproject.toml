@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "liminal-anchor-engine"
-version = "0.5.0"
+version = "0.6.0"
 description = "Transition-layer subsystem for adaptive cognitive systems: structures ambiguity, anchors continuity, and tracks identity as a gradient field."
 readme = "README.md"
 license = { text = "Apache-2.0" }

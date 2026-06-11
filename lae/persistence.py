@@ -57,10 +57,29 @@ class StateFileError(ValueError):
 
 
 def save_state(engine: LiminalAnchorEngine, path: str | Path) -> Path:
-    """Atomically write the engine's durable state to a JSON file.
+    """Atomically write one engine's durable state to a JSON file.
 
     Returns the path written. Parent directories are created as needed.
     """
+    return _write_document({"engine": engine.export_state()}, path)
+
+
+def save_collective_state(
+    engines: dict[str, LiminalAnchorEngine], path: str | Path
+) -> Path:
+    """Atomically write a multi-mind roster's durable state to one file.
+
+    Each agent's engine state is stored under its agent ID. Minds stay
+    separate on disk exactly as they do in memory (Phase 4: identity is
+    never merged).
+    """
+    return _write_document(
+        {"agents": {aid: eng.export_state() for aid, eng in engines.items()}},
+        path,
+    )
+
+
+def _write_document(payload: dict[str, Any], path: str | Path) -> Path:
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -68,7 +87,7 @@ def save_state(engine: LiminalAnchorEngine, path: str | Path) -> Path:
         "format": FORMAT_NAME,
         "version": FORMAT_VERSION,
         "saved_at": time.time(),
-        "engine": engine.export_state(),
+        **payload,
     }
 
     # Write to a temp file in the target directory, then move into
@@ -113,16 +132,51 @@ def load_state(path: str | Path) -> dict[str, Any] | None:
             f"{path} was written by a newer LAE (state version "
             f"{document.get('version')}, this build reads <= {FORMAT_VERSION})"
         )
-    if "engine" not in document:
+    if "engine" not in document and "agents" not in document:
         raise StateFileError(f"{path} has no engine state")
     return document
 
 
 def restore_into(engine: LiminalAnchorEngine, path: str | Path) -> bool:
-    """Load a state file into an engine. Returns True if state was
-    restored, False if no file existed (fresh start)."""
+    """Load a single-engine state file into an engine. Returns True if
+    state was restored, False if no file existed (fresh start)."""
     document = load_state(path)
     if document is None:
         return False
+    if "engine" not in document:
+        raise StateFileError(
+            f"{path} holds a multi-mind roster, not a single engine; "
+            "use restore_collective_into"
+        )
     engine.restore_state(document["engine"])
     return True
+
+
+def restore_collective_into(
+    engines: dict[str, LiminalAnchorEngine], path: str | Path
+) -> bool:
+    """Load a multi-mind state file into a roster of engines.
+
+    Matching is by agent ID: agents present in both file and roster are
+    restored; roster agents missing from the file start fresh; file
+    agents missing from the roster are left on disk untouched (they are
+    not lost — the next save from this roster will drop them, which is
+    the roster owner's call to make by saving).
+
+    Returns True if any agent was restored, False if no file existed.
+    """
+    document = load_state(path)
+    if document is None:
+        return False
+    if "agents" not in document:
+        raise StateFileError(
+            f"{path} holds a single engine, not a multi-mind roster; "
+            "use restore_into"
+        )
+    restored_any = False
+    for agent_id, engine in engines.items():
+        state = document["agents"].get(agent_id)
+        if state is not None:
+            engine.restore_state(state)
+            restored_any = True
+    return restored_any
