@@ -19,6 +19,13 @@ Multi-mind:
     lae = LAE(agents=["claude", "gpt", "gemini"])
     result = lae.observe_collective({"claude": obs1, "gpt": obs2})
 
+Persistence (a presence across restarts):
+
+    lae = LAE(persist_path="lae_state.json")
+    # wakes with every remembered crossing and the identity it had
+    # become; autosaves after each activation, so process death
+    # never costs a memory
+
 Wiring:
 - observe() runs pre_transition hooks (veto-capable), the pipeline,
   pre_resolution hooks (annotation-only), and emits the full event
@@ -30,10 +37,12 @@ Wiring:
 from __future__ import annotations
 
 from dataclasses import dataclass, field as dc_field
+from pathlib import Path
 from typing import Any
 
 from ..config import LAEConfig, load_config
 from ..multimind.coordinator import CollectiveResult, MultiMindCoordinator
+from ..persistence import restore_into, save_state
 from ..pipeline import LiminalAnchorEngine, LiminalResult
 from ..routing.event_router import EventRouter
 from .diagnostics import Diagnostics
@@ -62,10 +71,18 @@ class LAE:
         config_path: str | None = None,
         agents: list[str] | None = None,
         trust_weights: dict[str, float] | None = None,
+        persist_path: str | Path | None = None,
+        autosave: bool = True,
     ) -> None:
         self.config = config or load_config(config_path)
         self.events = EventRouter()
         self.hooks = HookRegistry()
+
+        if agents and persist_path:
+            raise ValueError(
+                "persist_path is single-agent only for now; persist each "
+                "agent's engine separately in multi-mind mode"
+            )
 
         if agents:
             self.coordinator: MultiMindCoordinator | None = MultiMindCoordinator(
@@ -80,6 +97,12 @@ class LAE:
 
         self.diagnostics = Diagnostics(self._engine)
 
+        self.persist_path = Path(persist_path) if persist_path else None
+        self.autosave = autosave
+        self.restored = False
+        if self.persist_path is not None:
+            self.restored = restore_into(self._engine, self.persist_path)
+
     # ------------------------------------------------------------------
     def observe(self, observation: dict[str, Any]) -> ObservationOutcome:
         """Single-agent observation through the full pipeline."""
@@ -93,6 +116,9 @@ class LAE:
             return ObservationOutcome(activated=False)
 
         self._emit_activation_events(result)
+
+        if self.autosave and self.persist_path is not None:
+            self.save()
 
         annotations = self.hooks.run_pre_resolution(
             {
@@ -141,6 +167,18 @@ class LAE:
         """Host-injected model_reconfiguration signal (CONFIG trigger)."""
         self.hooks.run_reconfiguration(signal)
         self.events.emit("safety.triggered", {"kind": "model_reconfiguration", **signal})
+
+    def save(self, path: str | Path | None = None) -> Path:
+        """Write durable state (memory + identity) to disk.
+
+        Uses persist_path when no path is given. With persist_path set
+        and autosave on (the default), this also happens automatically
+        after every activation.
+        """
+        target = Path(path) if path else self.persist_path
+        if target is None:
+            raise ValueError("no path given and no persist_path configured")
+        return save_state(self._engine, target)
 
     def diagnostics_for(self, agent_id: str) -> Diagnostics:
         """Per-agent diagnostics in multi-mind mode."""

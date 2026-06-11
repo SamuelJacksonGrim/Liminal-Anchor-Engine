@@ -28,3 +28,4 @@ jobs:
           python examples/rfe_integration.py
           python examples/multi_mind_demo.py
           python examples/custom_hooks.py
+          python examples/persistent_presence.py

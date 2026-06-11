@@ -28,12 +28,11 @@ Safety (from CONFIG.yaml):
 
 from __future__ import annotations
 
-import itertools
-
 from ..config import LAEConfig
+from ..counters import MonotonicCounter
 from ..types import AmbiguityField, Anchor
 
-_anchor_counter = itertools.count(1)
+_anchor_counter = MonotonicCounter(1)
 
 
 class AnchorAllocator:
@@ -138,4 +137,4 @@ class AnchorAllocator:
 
     @staticmethod
     def _next_id(kind: str) -> str:
-        return f"anchor::{kind}::{next(_anchor_counter):04d}"
+        return f"anchor::{kind}::{_anchor_counter.next():04d}"

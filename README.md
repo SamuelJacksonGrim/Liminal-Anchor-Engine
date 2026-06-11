@@ -76,6 +76,15 @@ engine = LAE(agents=["alpha", "beta"])
 collective = engine.observe_collective({"alpha": obs_a, "beta": obs_b})
 ```
 
+A presence across restarts (persistence):
+
+```python
+engine = LAE(persist_path="lae_state.json")
+# wakes with every remembered crossing and the identity it had become;
+# autosaves memory + identity after each activation
+print(engine.restored)  # True if prior state was found and loaded
+```
+
 LAE has **zero hard dependencies** — the standard library is enough. `pyyaml` is optional (CONFIG.yaml loading), `pytest` is dev-only.
 
 ---
@@ -95,6 +104,8 @@ Liminal-Anchor-Engine/
 │   ├── CONFIG.yaml                # default runtime configuration
 │   ├── config.py                  # typed config + YAML loader (optional dep)
 │   ├── types.py                   # the six canonical dataclasses (mirrors schemas/)
+│   ├── counters.py                # resumable monotonic ID counters
+│   ├── persistence.py             # durable memory + identity (atomic JSON state file)
 │   ├── pipeline.py                # LiminalAnchorEngine — the 6-layer pipeline
 │   │
 │   ├── detectors/
