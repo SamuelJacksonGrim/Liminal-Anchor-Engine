@@ -22,9 +22,9 @@ from .compression_strategy import CompressionStrategy
 from .memory_retrieval import MemoryRetrieval
 from .transition_episode_store import TransitionEpisodeStore
 
-import itertools
+from ..counters import MonotonicCounter
 
-_episode_counter = itertools.count(1)
+_episode_counter = MonotonicCounter(1)
 
 
 class LiminalMemoryBuffer:
@@ -45,7 +45,7 @@ class LiminalMemoryBuffer:
     ) -> LiminalMemoryEpisode:
         signature = self.compute_signature(field)
         episode = LiminalMemoryEpisode(
-            episode_id=f"episode::{next(_episode_counter):06d}",
+            episode_id=f"episode::{_episode_counter.next():06d}",
             source_state_id=event.source_state_id,
             target_state_ids=list(event.candidate_target_states),
             anchors_used=[a.anchor_id for a in anchors],
@@ -114,3 +114,34 @@ class LiminalMemoryBuffer:
 
     def __len__(self) -> int:
         return len(self._store)
+
+    # ------------------------------------------------------------------
+    def export_state(self) -> dict[str, Any]:
+        """JSON-serializable snapshot of the full memory layer."""
+        return {
+            "store": self._store.export_state(),
+            "episode_counter": _episode_counter.peek(),
+        }
+
+    def restore_state(self, state: dict[str, Any]) -> None:
+        """Rebuild memory from export_state() output.
+
+        The signature index is rebuilt by re-inserting each episode's
+        signature in insertion order — this reproduces the index's
+        running normalization ranges exactly, so it never drifts from
+        the store. The module episode counter is advanced past every
+        restored ID so new episodes never collide with remembered ones.
+        """
+        self._store.restore_state(state.get("store", {}))
+        self._index = AmbiguitySignatureIndex()
+        max_seen = 0
+        for episode in self._store.all():
+            self._index.insert(episode.episode_id, episode.ambiguity_signature)
+            suffix = episode.episode_id.rsplit("::", 1)[-1]
+            if suffix.isdigit():
+                max_seen = max(max_seen, int(suffix))
+        self._retrieval = MemoryRetrieval(self._store, self._index)
+        self._compression = CompressionStrategy(self._store, self._index, self.config)
+        _episode_counter.ensure_at_least(
+            max(max_seen + 1, int(state.get("episode_counter", 1)))
+        )

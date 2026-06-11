@@ -49,6 +49,8 @@ Liminal-Anchor-Engine/
 │   ├── CONFIG.yaml                # default runtime configuration
 │   ├── config.py                  # LAEConfig + load_config (yaml optional, never raises)
 │   ├── types.py                   # six canonical dataclasses + TimeWindow (mirror schemas/)
+│   ├── counters.py                # MonotonicCounter — resumable episode/anchor ID counters
+│   ├── persistence.py             # save_state/load_state/restore_into — durable memory + identity (JSON, atomic)
 │   ├── pipeline.py                # LiminalAnchorEngine: detector → field → anchors → memory → intent → identity
 │   ├── detectors/transition_detector.py
 │   ├── fields/ambiguity_field.py
@@ -61,12 +63,13 @@ Liminal-Anchor-Engine/
 │   └── integration/               # Phase 5: external_api.py (class LAE), system_hooks.py, diagnostics.py
 │
 ├── schemas/                       # JSON Schemas — structural source of truth (Contract #0)
-├── examples/                      # five standalone demos, all exercised by CI
+├── examples/                      # six standalone demos, all exercised by CI
 │   ├── demo.py                    # end-to-end pipeline walkthrough
 │   ├── minimal_agent_loop.py      # smallest realistic embedding pattern
 │   ├── rfe_integration.py         # RFESidecar adapter for RFE-Core2 hosts
 │   ├── multi_mind_demo.py         # Phase 4 collective crossing
-│   └── custom_hooks.py            # Phase 5 vetoes / annotations / events
+│   ├── custom_hooks.py            # Phase 5 vetoes / annotations / events
+│   └── persistent_presence.py     # memory + identity surviving process restarts
 └── tests/
     ├── conftest.py                # make_event / make_field fixtures
     ├── unit/                      # pytest unit tests per layer
@@ -116,6 +119,7 @@ Every `Anchor` specifies `protected_features`, `allowed_mutations`, `forbidden_m
 - ID conventions: regions `region::<name>` (source boundary: `region::<state>::boundary`), anchors `anchor::<kind>::NNNN`, episodes `episode::NNNNNN`. The anchor/episode counters are module-level and monotonically increase across engine instances within a process.
 - Safety guards (config-controlled): `max_active_anchors` cap, `prevent_anchor_overconstraint` (at least one region stays unconstrained; exploration anchors with `allowed_mutations == ["*"]` don't count as constraining), `prevent_identity_crystallization` (rigidity ceiling 0.9 for non-invariants).
 - `LAEConfig.raw` deep-copies `DEFAULTS` — config instances are isolated; never share nested dicts.
+- **Persistence** (`lae/persistence.py`): `LAE(persist_path="state.json")` restores memory + identity on init (`lae.restored` tells you which) and autosaves after each activation (`autosave=False` to opt out; `lae.save()` for manual saves). Saves are atomic (temp file + `os.replace`). Missing file = fresh start (returns/sets `False`); corrupt or wrong-format file raises `StateFileError` — never silently discarded. On restore, the episode/anchor counters advance past every persisted ID, so IDs stay collision-free across process lifetimes. Detector observation history is deliberately NOT persisted (its oscillation window is milliseconds wide). Single-agent only — `persist_path` + `agents=[...]` raises.
 
 ---
 

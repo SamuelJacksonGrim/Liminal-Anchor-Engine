@@ -59,3 +59,16 @@ class InvarianceTracker:
         if self._episode_count == 0:
             return 0.0
         return self._protection_count[feature] / self._episode_count
+
+    # ------------------------------------------------------------------
+    def export_state(self) -> dict:
+        return {
+            "episode_count": self._episode_count,
+            "protection_count": dict(self._protection_count),
+            "ever_allowed_mutation": sorted(self._ever_allowed_mutation),
+        }
+
+    def restore_state(self, state: dict) -> None:
+        self._episode_count = int(state.get("episode_count", 0))
+        self._protection_count = defaultdict(int, state.get("protection_count", {}))
+        self._ever_allowed_mutation = set(state.get("ever_allowed_mutation", []))

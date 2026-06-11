@@ -64,3 +64,18 @@ class PlasticityAnalyzer:
             feat: round(min(1.0, v), 4)
             for feat, v in self._rigidity_accum.items()
         }
+
+    # ------------------------------------------------------------------
+    def export_state(self) -> dict:
+        return {
+            "episode_count": self._episode_count,
+            "target_counter": dict(self._target_counter),
+            "rigidity_accum": dict(self._rigidity_accum),
+            "last_seen": dict(self._last_seen),
+        }
+
+    def restore_state(self, state: dict) -> None:
+        self._episode_count = int(state.get("episode_count", 0))
+        self._target_counter = Counter(state.get("target_counter", {}))
+        self._rigidity_accum = dict(state.get("rigidity_accum", {}))
+        self._last_seen = {k: int(v) for k, v in state.get("last_seen", {}).items()}
