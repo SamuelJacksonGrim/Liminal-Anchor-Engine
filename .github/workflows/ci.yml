@@ -24,5 +24,7 @@ jobs:
       - name: Run examples (must complete without error)
         run: |
           python examples/demo.py
+          python examples/minimal_agent_loop.py
+          python examples/rfe_integration.py
           python examples/multi_mind_demo.py
           python examples/custom_hooks.py
