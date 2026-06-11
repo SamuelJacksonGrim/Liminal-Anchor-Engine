@@ -22,321 +22,121 @@ LAE is a **sidecar cognition layer**, not a primary controller.
 
 ## Repository Status
 
-**Current phase: Phase 0 — Structural Definition**
-
-No implementation code exists yet. The repository contains only design documents:
-
-| File | Purpose |
-|---|---|
-| `README.md` | Project overview, repository map, execution flow, roadmap |
-| `ARCHITECTURE.md` | Layer descriptions, execution model, feedback dynamics, failure modes |
-| `CONTRACTS.md` | 7 invariant rules every module must obey |
-| `TYPES.md` | Canonical type definitions for all core data structures |
-| `LICENSE` | Apache License 2.0 |
-
-### Roadmap Summary
+**All five roadmap phases have a working implementation.** The project is now in a hardening / integration stage. The package is pure Python with **zero hard dependencies** (`pyyaml` optional, `pytest` dev-only) and installs with `pip install -e ".[dev]"`.
 
 | Phase | Name | Status |
 |---|---|---|
-| 0 | Structural Definition | In progress (docs done, schemas pending) |
-| 1 | Minimal Functional Skeleton | Not started |
-| 2 | Structured Memory & Retrieval | Not started |
-| 3 | Identity Gradient System | Not started |
-| 4 | Multi-Agent / Multi-Mind Support | Not started |
-| 5 | Production Integration Layer | Not started |
+| 0 | Structural Definition | ✅ Done (docs + schemas) |
+| 1 | Minimal Functional Skeleton | ✅ Done (`pipeline.py` end-to-end) |
+| 2 | Structured Memory & Retrieval | ✅ Done (cosine-similarity retrieval, anchor suggestions) |
+| 3 | Identity Gradient System | ✅ Done (`identity/` live gradient model) |
+| 4 | Multi-Agent / Multi-Mind Support | ✅ Done (`multimind/`) |
+| 5 | Production Integration Layer | ✅ Done (`integration/external_api.py`, hooks, events, diagnostics) |
 
 ---
 
-## Repository Structure
+## Repository Structure (actual)
 
-### Current files
+The implemented tree intentionally deviates from the original planned map in older docs — it is flatter. Key deviations: orchestration lives in `lae/pipeline.py` (not a `core/` package), all canonical types live in `lae/types.py` (no `events/` package), the event router lives in `lae/routing/`, and detector rules are methods on one `TransitionDetector` class rather than separate modules.
 
 ```
 Liminal-Anchor-Engine/
-├── CLAUDE.md           ← this file
-├── README.md
-├── ARCHITECTURE.md
-├── CONTRACTS.md
-├── TYPES.md
-└── LICENSE
-```
-
-### Planned `lae/` source tree (from README.md)
-
-```
-lae/
-├── CONFIG.yaml
+├── CLAUDE.md / README.md / ARCHITECTURE.md / CONTRACTS.md / TYPES.md
+├── pyproject.toml                 # package: liminal-anchor-engine
 │
-├── core/                          # Orchestration & pipeline coordination
-│   ├── lae_orchestrator.py        # Main entry point; manages lifecycle
-│   ├── transition_pipeline.py     # Executes the 6-layer pipeline
-│   ├── event_router.py            # Routes events between layers
-│   └── execution_context.py      # Holds per-activation state
+├── lae/
+│   ├── __init__.py                # public API: LAE, LiminalAnchorEngine, all core types
+│   ├── CONFIG.yaml                # default runtime configuration
+│   ├── config.py                  # LAEConfig + load_config (yaml optional, never raises)
+│   ├── types.py                   # six canonical dataclasses + TimeWindow (mirror schemas/)
+│   ├── pipeline.py                # LiminalAnchorEngine: detector → field → anchors → memory → intent → identity
+│   ├── detectors/transition_detector.py
+│   ├── fields/ambiguity_field.py
+│   ├── anchors/anchor_allocator.py
+│   ├── memory/                    # liminal_memory_buffer.py is the facade; pipeline talks only to it
+│   ├── intent/proto_intent_synthesizer.py
+│   ├── identity/                  # mapper + field model + invariance/plasticity/evolution trackers
+│   ├── multimind/                 # Phase 4: coordinator, transition merger, shared field, collective intent
+│   ├── routing/event_router.py    # pub/sub; subscriber exceptions are isolated
+│   └── integration/               # Phase 5: external_api.py (class LAE), system_hooks.py, diagnostics.py
 │
-├── detectors/                     # Identify when system leaves stable attractor
-│   ├── transition_detector.py
-│   ├── oscillation_detector.py
-│   ├── conflict_detector.py
-│   └── confidence_drop_detector.py
-│
-├── fields/                        # Transform uncertainty into structured geometry
-│   ├── ambiguity_field_generator.py
-│   ├── ambiguity_field_model.py
-│   ├── conflict_regions.py
-│   ├── void_mapper.py
-│   └── agreement_zones.py
-│
-├── anchors/                       # Continuity constraints during transformation
-│   ├── liminal_anchor_allocator.py
-│   ├── anchor_model.py
-│   ├── anchor_priority_solver.py
-│   ├── protected_feature_registry.py
-│   └── mutation_policy_engine.py
-│
-├── memory/                        # Store transitions, not state snapshots
-│   ├── liminal_memory_buffer.py   # In-memory buffer (Phase 1)
-│   ├── transition_episode_store.py
-│   ├── ambiguity_signature_index.py
-│   ├── memory_retrieval.py
-│   └── compression_strategy.py
-│
-├── intent/                        # Pre-decisional directional vectors
-│   ├── proto_intent_synthesizer.py
-│   ├── intent_gradient_builder.py
-│   ├── directional_field_generator.py
-│   └── intent_stability_filter.py
-│
-├── identity/                      # Identity as dynamic gradient field
-│   ├── identity_gradient_mapper.py
-│   ├── identity_field_model.py
-│   ├── invariance_tracker.py
-│   ├── plasticity_analyzer.py
-│   └── evolution_dynamics.py
-│
-├── events/                        # Inter-layer event definitions
-│   ├── transition_event.py
-│   ├── ambiguity_event.py
-│   ├── anchor_event.py
-│   ├── proto_intent_event.py
-│   └── identity_update_event.py
-│
-├── schemas/                       # JSON schemas for all core types
-│   ├── transition_schema.json
-│   ├── ambiguity_field_schema.json
-│   ├── anchor_schema.json
-│   ├── memory_episode_schema.json
-│   ├── proto_intent_schema.json
-│   └── identity_gradient_schema.json
-│
-├── utils/
-│   ├── similarity.py
-│   ├── clustering.py
-│   ├── graph_utils.py
-│   ├── statistical_signals.py
-│   └── time_windowing.py
-│
-└── integration/                   # Hooks into external systems (Phase 5)
-    ├── system_hooks.py
-    ├── pre_decision_hook.py
-    ├── reconfiguration_hook.py
-    ├── multi_mind_synthesis_hook.py
-    └── external_api.py
+├── schemas/                       # JSON Schemas — structural source of truth (Contract #0)
+├── examples/demo.py               # runnable end-to-end demo (also exercised by CI)
+└── tests/
+    ├── conftest.py                # make_event / make_field fixtures
+    ├── unit/                      # pytest unit tests per layer
+    ├── smoke/, integration/       # narrative check-suite scripts (exit non-zero on failure)
+    └── test_suites.py             # pytest wrappers that run the narrative suites
 ```
 
 ---
 
 ## Core Design Contracts (Non-Negotiable)
 
-Source: `CONTRACTS.md`. Every module must comply with all seven rules. A module that violates any contract is not part of LAE.
+Source: `CONTRACTS.md`. Every module must comply. A module that violates any contract is not part of LAE.
+
+### 0. Schemas are the source of truth
+`schemas/*.json` define structure; contracts define interpretation. The dataclasses in `lae/types.py` must match the schemas field-for-field — no renaming, no semantic expansion. `tests/unit/test_types.py` enforces this parity automatically.
 
 ### 1. Transitions are primary
-All computation is transition-centric. Detectors identify *leaving states*, not states. Memory stores *crossings*, not snapshots. Identity tracks *drift*, not attributes.
-> States are temporary compressions of transition fields.
+Detectors identify *leaving states*, not states. Memory stores *crossings*, not snapshots. Identity tracks *drift*, not attributes.
 
 ### 2. Ambiguity must be structured
-Ambiguity is a navigable space, not noise. Every `AmbiguityField` must contain regions, gradients, voids, coherence islands, and a conflict topology. Unstructured ambiguity is invalid output.
+Every `AmbiguityField` carries regions, gradients, voids, coherence islands, and a conflict topology. The field generator never selects a winner.
 
 ### 3. Anchors are constraints, not states
-Every `Anchor` must specify `protected_features`, `allowed_mutations`, `forbidden_mutations`, `priority`, and `temporal_scope`. Anchors preserve identity continuity without freezing identity.
+Every `Anchor` specifies `protected_features`, `allowed_mutations`, `forbidden_mutations`, `priority`, `scope`. Note: `scope` is either a single region ID or a pipe-delimited pair (`"region::a|region::b"`) — always `split("|")` before comparing.
 
 ### 4. Intent begins as drift
-`ProtoIntent` is not a decision. It is directional pressure emerging from the ambiguity field before any choice is made. It must carry causal history (`origin_episode_ids`) and source uncertainty (`ambiguity_lineage`).
+`ProtoIntent` is directional pressure, never a decision. It carries causal history (`origin_episode_ids`) and source uncertainty (`ambiguity_lineage`). Stability reflects temporal coherence, not correctness.
 
 ### 5. Identity is a gradient field
-`IdentityGradient` is a dynamic manifold: invariants, plasticity zones, rigidity map, drift vectors, and trajectory history. It is never a fixed vector or a snapshot.
+`IdentityGradient` tracks invariants, plasticity zones, rigidity, drift vectors, and an append-only `trajectory_history`. Invariants are append-only; rigidity is clamped [0, 1]; the crystallization guard keeps at least one non-invariant feature plastic.
 
 ### 6. Prime directive
 > Preserve continuity without preventing transformation.
 
-This is the single global constraint that overrides all local optimizations.
-
-### 7. System validity condition
-A system state is valid only when: transitions are first-class objects; ambiguity is structured; anchors preserve invariants without freezing dynamics; proto-intents are non-decisional; identity is gradient-based.
-
 ---
 
-## Data Types Reference
+## Key Runtime Facts
 
-Source: `TYPES.md`. These are canonical. Extend them; do not redefine or replace them.
-
-```python
-from dataclasses import dataclass, field
-from typing import Any
-
-@dataclass
-class TransitionEvent:
-    source_state_id: str
-    candidate_target_states: list[str]
-    confidence_profile: dict[str, float]
-    conflict_score: float
-    time_window: dict[str, float]          # {"start": float, "end": float}
-
-@dataclass
-class Region:
-    id: str
-    conflict_density: float
-    coherence_score: float
-    semantic_tags: list[str]
-    neighbors: list[str]
-
-@dataclass
-class AmbiguityField:
-    regions: list[Region]
-
-@dataclass
-class Anchor:
-    anchor_id: str
-    protected_features: list[str]
-    allowed_mutations: list[str]
-    forbidden_mutations: list[str]
-    priority: int
-    scope: str
-
-@dataclass
-class LiminalMemoryEpisode:
-    episode_id: str
-    source_state_id: str
-    target_state_ids: list[str]
-    anchors_used: list[str]
-    ambiguity_signature: dict[str, Any]
-    identity_shift_delta: dict[str, Any]
-
-@dataclass
-class ProtoIntent:
-    vector: dict[str, float]
-    magnitude: float
-    stability_score: float
-    origin_episode_ids: list[str]
-    ambiguity_lineage: list[str]
-
-@dataclass
-class IdentityGradient:
-    direction: dict[str, float]
-    rigidity: dict[str, float]
-    plasticity_zones: list[str]
-    drift_vectors: dict[str, float]
-    trajectory_history: list[dict[str, Any]]
-```
-
----
-
-## Architecture Layers
-
-Source: `ARCHITECTURE.md` sections 6.1–6.6.
-
-### Layer 1 — Detection (`detectors/`)
-**Input:** raw cognitive signals (confidence scores, hypothesis overlap, contradiction density, temporal oscillation)
-**Output:** `TransitionEvent`
-**Trigger condition:** confidence collapse below threshold, oscillation between hypotheses, unresolved frame conflict, rapid context switching, model reconfiguration request.
-The `TransitionEvent` is the atomic trigger for all downstream layers.
-
-### Layer 2 — Ambiguity Field (`fields/`)
-**Input:** `TransitionEvent`
-**Output:** `AmbiguityField`
-Maps uncertainty into structured geometry: high-conflict regions, consensus zones, semantic voids. The field becomes the operating space for all downstream layers. Uncertainty is mapped, not removed.
-
-### Layer 3 — Anchor (`anchors/`)
-**Input:** `AmbiguityField` + identity/ethics/stability context
-**Output:** `Anchor` set
-Anchors are injected into the ambiguity field to reshape its topology and carve allowed paths of becoming. They define what must remain invariant, what may transform, and what is explicitly unconstrained. Anchor placement can feed back and modify the ambiguity field.
-
-### Layer 4 — Memory (`memory/`)
-**Input:** `AmbiguityField` + `Anchor` set
-**Output:** `LiminalMemoryEpisode`
-Encodes the A→B transition path with ambiguity structure, anchors applied, resolution pressure trajectory, and identity drift signature. Does NOT store state A or state B in isolation. In Phase 2, enables embedding-based retrieval of similar past transitions.
-
-### Layer 5 — Intent (`intent/`)
-**Input:** stabilized transition field + memory context
-**Output:** `ProtoIntent`
-Extracts directional gradients from the transition field. These are pre-decisional vector forces — directional tendencies that bias but do not determine future cognition. Proto-intents can re-weight ambiguity regions (feedback).
-
-### Layer 6 — Identity (`identity/`)
-**Input:** `ProtoIntent` + prior `IdentityGradient`
-**Output:** updated `IdentityGradient`
-Updates the system's self-model after each transition cycle. Tracks invariants, plastic regions, resistance boundaries, and drift vectors. Identity drift can feed back to adjust anchor priorities.
-
----
-
-## Execution Flow
-
-LAE runs in **event-triggered bursts**, not a continuous loop. It activates only under instability.
-
-```
-State destabilization detected
-        ↓
-Transition Detector  →  TransitionEvent
-        ↓
-Ambiguity Field Generator  →  AmbiguityField
-        ↓
-Liminal Anchor Allocator  →  Anchor set
-        ↓
-Liminal Memory Buffer  →  LiminalMemoryEpisode
-        ↓
-Proto-Intent Synthesizer  →  ProtoIntent
-        ↓
-Identity Gradient Mapper  →  IdentityGradient (updated)
-        ↓
-Event Router  →  Integration Hooks
-```
-
-This is a **feedback-linked transformation chain**, not a strict pipeline:
-- Anchor placement can modify ambiguity field topology
-- Identity drift can adjust anchor priorities
-- Proto-intents can re-weight ambiguity regions
-- Memory retrieval can influence detector sensitivity
-
----
-
-## Planned Tech Stack
-
-- **Language:** Python 3.x (inferred from all `.py` filenames in the planned structure)
-- **License:** Apache 2.0
-- **Phase 2 storage:** embedding-based vector index for transition memory retrieval
-- **Build tooling:** none defined yet; add `pyproject.toml` when Phase 1 begins
-- **Testing:** `pytest` is the natural fit; add alongside each module
-- **CI/CD:** not configured yet; planned for Phase 5
+- **Observation contract** (input to `TransitionDetector.observe` / `LAE.observe`):
+  ```python
+  {"state_id": str, "hypotheses": {target_id: confidence}, "timestamp": float}  # timestamp optional
+  ```
+- **Trigger rules** (defaults from `lae/CONFIG.yaml`): confidence_collapse (top conf < 0.4), hypothesis_conflict (top two within 0.15), frame_oscillation (top hypothesis flips ≥2× inside a 1500 ms window — needs ≥3 observations).
+- A confident switch (e.g. 0.91 vs 0.22) fires **nothing** — the engine staying dormant outside liminal states is correct behavior, not a bug.
+- `LiminalAnchorEngine.process()` returns `None` when no trigger fires; `LAE.observe()` wraps this in `ObservationOutcome(activated=False)`.
+- Event stream per activation, in order: `transition.detected`, `field.generated`, `anchors.allocated`, `episode.recorded`, `intent.synthesized`, `identity.updated`.
+- ID conventions: regions `region::<name>` (source boundary: `region::<state>::boundary`), anchors `anchor::<kind>::NNNN`, episodes `episode::NNNNNN`. The anchor/episode counters are module-level and monotonically increase across engine instances within a process.
+- Safety guards (config-controlled): `max_active_anchors` cap, `prevent_anchor_overconstraint` (at least one region stays unconstrained; exploration anchors with `allowed_mutations == ["*"]` don't count as constraining), `prevent_identity_crystallization` (rigidity ceiling 0.9 for non-invariants).
+- `LAEConfig.raw` deep-copies `DEFAULTS` — config instances are isolated; never share nested dicts.
 
 ---
 
 ## Development Workflow
 
+### Setup, run, test
+```bash
+pip install -e ".[dev]"
+pytest                      # full suite: unit tests + wrapped narrative suites
+python examples/demo.py     # end-to-end demo, runs without install too
+```
+
+### CI
+`.github/workflows/ci.yml` runs `pytest` and the demo on Python 3.10–3.12 for pushes to `main` and all PRs.
+
 ### Git branches
 - `main` — stable, protected
-- `claude/<descriptor>` — AI-assisted feature/doc branches (current: `claude/claude-md-docs-z9us4m`)
+- `claude/<descriptor>` — AI-assisted feature/doc branches
 - Create feature branches off `main`; merge via PR
 
 ### Commit message style
-Observed pattern from git history:
+Imperative mood, capitalized verb, short subject (≤50 chars), optional detail body:
 ```
 Add LAE TYPES documentation
-Add Internal Logic Contract for Liminal Anchor Engine
-Add architecture documentation for Liminal Anchor Engine
-Initialize README.md with project overview and details
+Fix anchor overconstraint guard scope parsing
 ```
-Rules:
-- Imperative mood, capitalized verb ("Add", "Implement", "Update", "Fix")
-- Short subject line (50 chars or less)
-- Follow with a blank line and a detail body when the change needs explanation
 
 ### Push
 Always push with: `git push -u origin <branch-name>`
@@ -345,35 +145,33 @@ Always push with: `git push -u origin <branch-name>`
 
 ## AI Assistant Guidelines
 
-Follow these rules when implementing any part of this system.
-
-**Before writing any module:**
-1. Re-read `CONTRACTS.md` — check which invariants apply to the module you are about to write.
-2. Confirm the module's output type is one of the six canonical types in `TYPES.md` (or a clearly marked extension of one).
-
-**Implementation order:**
-Follow the roadmap phases in sequence. Phase 1 before Phase 2, etc. Within Phase 1, implement layers in pipeline order: `detectors/` → `fields/` → `anchors/` → `memory/` → `intent/` (identity comes in Phase 3).
-
-**Layer decoupling:**
-Layers communicate exclusively through the event types defined in `events/`. No direct cross-layer function calls. The `core/event_router.py` is the only cross-layer coupling point.
+**Before changing any module:**
+1. Re-read `CONTRACTS.md` — check which invariants apply.
+2. If a canonical type needs a new field: add it to the JSON schema in `schemas/` first, then `lae/types.py`, then `TYPES.md` and `CONTRACTS.md`. The schema-parity test will fail until all are aligned — that's by design.
 
 **Types are canonical:**
-The six types in `TYPES.md` (and the dataclasses above) are the ground truth. If a new field is needed, add it to the existing type. Do not create parallel or renamed versions of the same concept.
+The six types in `lae/types.py` are ground truth (with `schemas/` as the structural authority). Never create parallel or renamed versions of the same concept.
+
+**Layer boundaries:**
+The pipeline (`lae/pipeline.py`) is the only place layers are wired together; `lae/integration/external_api.py` (class `LAE`) is the only stable external surface. Memory submodules are private behind `LiminalMemoryBuffer`. Don't reach around the facades.
 
 **Feedback loops are intentional:**
-The system is not strictly feedforward. Designing a layer to emit feedback events that influence earlier layers is correct behavior — but document the feedback path in a comment when adding one.
+The system is not strictly feedforward (anchors reshape the field, identity adjusts anchor priorities, memory influences intent). When adding a feedback path, document it in a comment.
 
-**Failure modes to avoid** (from `ARCHITECTURE.md` section 10):
+**Failure modes to avoid** (`ARCHITECTURE.md` §10):
 - Over-collapsing ambiguity into a single resolution prematurely
 - Over-constraining with too many anchors, preventing meaningful transition
 - Hardening identity into a fixed point instead of maintaining a gradient
 - Treating past transitions as deterministic templates in memory retrieval
 
 **Tests:**
-Write unit tests alongside each new module under a `tests/` directory mirroring the source tree (e.g., `tests/detectors/test_transition_detector.py`). Each test should exercise the module with a synthetic `TransitionEvent` and assert the output matches the canonical type contract.
+- Unit tests live in `tests/unit/test_<module>.py` using the `make_event` / `make_field` fixtures from `tests/conftest.py`.
+- The narrative suites (`tests/smoke/`, `tests/integration/`) are runnable scripts that exit non-zero on failure; `tests/test_suites.py` wraps them for pytest. Keep both styles working.
+- Every new module gets unit tests in the same change. Contract assertions (e.g. "intent binds no decision") belong in tests, not just docstrings.
 
 **Do not:**
 - Treat states as primary objects — transitions are always the unit of analysis
 - Store only pre- or post-transition state in memory — always store the crossing
 - Produce a `ProtoIntent` that encodes a committed decision
 - Represent identity as a static dict or fixed attribute set
+- Add hard runtime dependencies — the zero-dependency property is deliberate

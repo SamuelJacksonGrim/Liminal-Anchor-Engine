@@ -24,8 +24,11 @@ class InvarianceTracker:
     def __init__(self) -> None:
         self._episode_count = 0
         self._protection_count: dict[str, int] = defaultdict(int)
-        # Track features that have ever been in forbidden_mutations (disqualified).
-        self._ever_mutated: set[str] = set()
+        # Features an anchor has ever explicitly allowed to mutate are
+        # disqualified from invariance — something permitted to change
+        # cannot be invariant. (Forbidden mutations do NOT disqualify:
+        # they are protection, the opposite of mutation evidence.)
+        self._ever_allowed_mutation: set[str] = set()
 
     # ------------------------------------------------------------------
     def observe(self, episode: LiminalMemoryEpisode) -> None:
@@ -33,12 +36,12 @@ class InvarianceTracker:
         self._episode_count += 1
         sig = episode.ambiguity_signature
         protected = sig.get("protected_features", [])
-        forbidden_seen = sig.get("forbidden_mutations_seen", [])
+        allowed_seen = sig.get("allowed_mutations_seen", [])
 
         for feat in protected:
             self._protection_count[feat] += 1
-        for feat in forbidden_seen:
-            self._ever_mutated.add(feat)
+        for feat in allowed_seen:
+            self._ever_allowed_mutation.add(feat)
 
     # ------------------------------------------------------------------
     def invariant_candidates(self) -> list[str]:
@@ -49,7 +52,7 @@ class InvarianceTracker:
         return [
             feat
             for feat, count in self._protection_count.items()
-            if count >= threshold_count and feat not in self._ever_mutated
+            if count >= threshold_count and feat not in self._ever_allowed_mutation
         ]
 
     def protection_rate(self, feature: str) -> float:

@@ -109,14 +109,30 @@ class AnchorAllocator:
         # Safety: prevent over-constraint — at least one region of the
         # field must remain fully unanchored and mutable.
         if self.config.prevent_anchor_overconstraint:
-            anchored_scopes = {a.scope for a in anchors}
+            # Scopes are either a single region ID or a pipe-delimited
+            # pair ("region::a|region::b") — split before comparing, a
+            # substring check would silently mismatch. Exploration
+            # anchors (allowed_mutations == ["*"]) leave their region
+            # fully mutable, so they don't count as constraining it.
             all_region_ids = {r.id for r in field.regions}
-            fully_covered = all(
-                any(rid in scope for scope in anchored_scopes)
-                for rid in all_region_ids
-            )
-            if fully_covered and anchors:
-                anchors.pop()  # drop lowest-priority anchor
+
+            def constrained() -> set[str]:
+                out: set[str] = set()
+                for a in anchors:
+                    if "*" in a.allowed_mutations:
+                        continue
+                    out.update(a.scope.split("|"))
+                return out
+
+            # Shed lowest-priority constraining anchors until at least
+            # one region is free — a single drop is not always enough.
+            while all_region_ids <= constrained():
+                for i in range(len(anchors) - 1, -1, -1):
+                    if "*" not in anchors[i].allowed_mutations:
+                        del anchors[i]
+                        break
+                else:
+                    break
 
         return anchors
 
