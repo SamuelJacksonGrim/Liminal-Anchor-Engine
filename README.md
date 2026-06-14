@@ -277,6 +277,10 @@ LAE plugs into systems at:
 
 It acts as a **sidecar cognition layer**, not a primary controller.
 
+**→ See [`integration/README.md`](integration/README.md) for the full integration guide** —
+what LAE is in depth, the input/output contract, and step-by-step wiring
+(including how to feed a local LLM running in a terminal).
+
 ---
 
 # 🧬 Design Principles
