@@ -37,6 +37,10 @@ lae:
     store_type: episodic
     compression: enabled
     index_by: ambiguity_signature
+    # Cap the similarity scan to the most-recent N episodes so retrieval cost
+    # stays flat as memory grows. 0 disables the cap. Stores smaller than the
+    # cap are unaffected.
+    retrieval_scan_limit: 512
 
   intent:
     type: proto_vector

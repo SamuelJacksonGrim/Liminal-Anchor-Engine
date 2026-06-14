@@ -44,12 +44,16 @@ def _cosine(a: list[float], b: list[float]) -> float:
 
 
 class AmbiguitySignatureIndex:
-    def __init__(self) -> None:
+    def __init__(self, scan_limit: int = 0) -> None:
         # episode_id -> raw vector (pre-normalization stored for re-norm)
         self._entries: list[tuple[str, list[float]]] = []
         # Running min/max per dimension for normalization
         self._mins: list[float] = [float("inf")] * 5
         self._maxs: list[float] = [float("-inf")] * 5
+        # Cap the linear similarity scan to the most-recent N entries so
+        # top_k stays O(1) per call as memory grows. 0 = unbounded (scan all).
+        # Entries are appended in insertion order, so the newest are last.
+        self.scan_limit = scan_limit
 
     # ------------------------------------------------------------------
     def insert(self, episode_id: str, signature: dict[str, Any]) -> None:
@@ -68,9 +72,12 @@ class AmbiguitySignatureIndex:
         if not self._entries:
             return []
         query = self._normalize(_to_vector(signature))
+        entries = self._entries
+        if self.scan_limit and len(entries) > self.scan_limit:
+            entries = entries[-self.scan_limit :]
         scored = [
             (eid, _cosine(query, self._normalize(vec)))
-            for eid, vec in self._entries
+            for eid, vec in entries
         ]
         scored.sort(key=lambda x: x[1], reverse=True)
         return scored[:k]

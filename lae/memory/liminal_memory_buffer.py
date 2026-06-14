@@ -31,7 +31,9 @@ class LiminalMemoryBuffer:
     def __init__(self, config: LAEConfig | None = None) -> None:
         self.config = config or LAEConfig()
         self._store = TransitionEpisodeStore()
-        self._index = AmbiguitySignatureIndex()
+        self._index = AmbiguitySignatureIndex(
+            scan_limit=self.config.retrieval_scan_limit
+        )
         self._retrieval = MemoryRetrieval(self._store, self._index)
         self._compression = CompressionStrategy(self._store, self._index, self.config)
 
@@ -133,7 +135,9 @@ class LiminalMemoryBuffer:
         restored ID so new episodes never collide with remembered ones.
         """
         self._store.restore_state(state.get("store", {}))
-        self._index = AmbiguitySignatureIndex()
+        self._index = AmbiguitySignatureIndex(
+            scan_limit=self.config.retrieval_scan_limit
+        )
         max_seen = 0
         for episode in self._store.all():
             self._index.insert(episode.episode_id, episode.ambiguity_signature)
