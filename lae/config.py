@@ -42,6 +42,10 @@ DEFAULTS: dict[str, Any] = {
         "store_type": "episodic",
         "compression": "enabled",
         "index_by": "ambiguity_signature",
+        # Cap the similarity scan to the most-recent N episodes so retrieval
+        # stays O(1) per activation instead of O(memory size). 0 disables the
+        # cap (scan everything). Stores smaller than the cap are unaffected.
+        "retrieval_scan_limit": 512,
     },
     "intent": {
         "type": "proto_vector",
@@ -105,6 +109,11 @@ class LAEConfig:
     @property
     def priority_bias(self) -> str:
         return str(self.raw["anchors"]["priority_bias"])
+
+    # -- memory --
+    @property
+    def retrieval_scan_limit(self) -> int:
+        return int(self.raw["memory"].get("retrieval_scan_limit", 0))
 
     # -- safety --
     @property
