@@ -10,6 +10,14 @@ Its core premise is simple:
 
 > The most important structure in any adaptive system is not what it is — but how it changes when it is no longer what it was.
 
+**LAE is an active processing engine — not a read-only probe, observer, or measurement tool.**
+Despite the API verb `observe()`, it does not merely inspect a system and report numbers.
+Every activation *runs* a six-stage pipeline that **produces** structure the host can act on:
+a mapped ambiguity field, continuity anchors, a stored transition episode, directional
+proto-intent, and an updated identity gradient. `observe()` is how you *feed* the engine —
+not a promise that it stays passive. (The only read-only measurement code in this repo is
+`examples/benchmark_overhead.py`, which measures LAE's *own* runtime cost.)
+
 ---
 
 # 🧭 Purpose
