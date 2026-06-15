@@ -18,6 +18,8 @@ LAE does not resolve ambiguity. It structures ambiguity into a navigable space, 
 
 LAE is a **sidecar cognition layer**, not a primary controller.
 
+**It is an active processing engine — not a read-only probe, observer, or measurement tool.** Despite the `observe()` API verb, every activation *runs* the full pipeline and *emits* anchors, proto-intent, a memory episode, and an identity update: it **produces** structure the host can act on, it does not merely measure or report. (The only read-only measurement code in the repo is `examples/benchmark_overhead.py`, which times LAE itself.) Do not describe LAE as observe-only or as something that "just measures."
+
 ---
 
 ## Repository Status
