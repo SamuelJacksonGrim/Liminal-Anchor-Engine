@@ -1,5 +1,12 @@
 # 📘 Liminal Anchor Engine (LAE)
 
+[![License: AGPL-3.0-only](https://img.shields.io/badge/license-AGPL--3.0--only-blue)](LICENSE)
+[![dual-license](https://img.shields.io/badge/dual--license-AGPL--3.0--only%20or%20commercial-blueviolet)](LICENSING.md)
+[![CI](https://github.com/SamuelJacksonGrim/Liminal-Anchor-Engine/actions/workflows/ci.yml/badge.svg)](https://github.com/SamuelJacksonGrim/Liminal-Anchor-Engine/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/python-%3E%3D3.10-3776AB?logo=python&logoColor=white)](https://www.python.org)
+![status](https://img.shields.io/badge/status-alpha-success)
+
+
 ## A transition-layer subsystem for structured becoming
 
 The **Liminal Anchor Engine (LAE)** is a system designed to operate specifically in the *in-between states* of cognition, identity, and model reconfiguration.

@@ -7,14 +7,14 @@ name = "liminal-anchor-engine"
 version = "0.6.0"
 description = "Transition-layer subsystem for adaptive cognitive systems: structures ambiguity, anchors continuity, and tracks identity as a gradient field."
 readme = "README.md"
-license = { text = "Apache-2.0" }
+license = { text = "AGPL-3.0-only" }
 requires-python = ">=3.10"
 authors = [{ name = "Samuel Jackson Grim" }]
 keywords = ["cognitive-architecture", "transitions", "identity", "ambiguity", "agents"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: Apache Software License",
+    "License :: OSI Approved :: GNU Affero General Public License v3",
     "Programming Language :: Python :: 3",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
